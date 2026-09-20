@@ -67,7 +67,12 @@ function renderEvent() {
   title.textContent = currentEvent.name;
   const meta = document.createElement("p");
   meta.className = "event-meta";
-  meta.textContent = `${new Date(currentEvent.date).toLocaleString()} · ${currentEvent.status}`;
+  const eventFacts = document.createElement("span");
+  eventFacts.textContent = `${new Date(currentEvent.date).toLocaleString()} · ${currentEvent.status}`;
+  const eventPage = document.createElement("a");
+  eventPage.href = `/events/${encodeURIComponent(currentEvent.id)}`;
+  eventPage.textContent = "View card page";
+  meta.append(eventFacts, eventPage);
   eventHeader.append(title, meta);
 
   boutsContainer.replaceChildren();
@@ -87,7 +92,13 @@ function renderEvent() {
 
     const fighters = document.createElement("div");
     fighters.className = "fighters";
-    bout.fighters.forEach((fighter) => {
+    bout.fighters.forEach((fighter, index) => {
+      if (index > 0) {
+        const versus = document.createElement("span");
+        versus.className = "versus";
+        versus.textContent = "VS";
+        fighters.append(versus);
+      }
       const button = document.createElement("button");
       button.className = "fighter";
       button.type = "button";

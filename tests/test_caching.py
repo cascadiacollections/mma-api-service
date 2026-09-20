@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from app import espn
-from app.espn import _payload_ttl
+from app.providers import espn_mma
+from app.providers.espn_mma import _payload_ttl
 
 
 def event_payload(*, completed: bool, state: str) -> dict:
@@ -56,16 +56,45 @@ async def test_concurrent_cache_misses_share_one_upstream_request(
             return FakeResponse()
 
     fake_client = FakeClient()
-    espn._scoreboard_cache.clear()
-    espn._cache_locks.clear()
-    monkeypatch.setattr(espn, "_redis", None)
-    monkeypatch.setattr(espn, "_get_http_client", lambda: fake_client)
+    espn_mma._scoreboard_cache.clear()
+    espn_mma._cache_locks.clear()
+    monkeypatch.setattr(espn_mma, "_redis", None)
+    monkeypatch.setattr(espn_mma, "_get_http_client", lambda: fake_client)
 
     first, second = await asyncio.gather(
-        espn.fetch_scoreboard({"event": "600000001"}),
-        espn.fetch_scoreboard({"event": "600000001"}),
+        espn_mma.fetch_scoreboard({"event": "600000001"}),
+        espn_mma.fetch_scoreboard({"event": "600000001"}),
     )
 
     assert first == {"events": []}
     assert second == first
     assert fake_client.calls == 1
+
+
+async def test_event_lookup_falls_back_when_espn_ignores_event_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    wrong_event = {
+        "id": "600000002",
+        "name": "UFC Other",
+        "date": "2026-09-21T00:00Z",
+        "status": {"type": {"description": "Scheduled", "completed": False}},
+        "competitions": [],
+    }
+    requested_event = {
+        "id": "600000001",
+        "name": "UFC Test",
+        "date": "2026-09-20T00:00Z",
+        "status": {"type": {"description": "Scheduled", "completed": False}},
+        "competitions": [],
+    }
+    payloads = iter(({"events": [wrong_event]}, {"events": [requested_event]}))
+
+    async def fake_fetch(_: dict[str, str]) -> dict:
+        return next(payloads)
+
+    monkeypatch.setattr(espn_mma, "fetch_scoreboard", fake_fetch)
+
+    event = await espn_mma.get_event("600000001")
+
+    assert event.id == "600000001"

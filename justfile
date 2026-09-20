@@ -24,6 +24,9 @@ check: lint test
     node --check app/static/app.js
     node --check app/static/theme.js
 
+indexnow:
+    uv run python scripts/submit_indexnow.py
+
 audit:
     uv export --frozen --no-dev --format requirements-txt --no-hashes | uvx --from pip-audit pip-audit -r /dev/stdin
 

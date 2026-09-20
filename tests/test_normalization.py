@@ -1,6 +1,6 @@
 import pytest
 
-from app.espn import normalize_event
+from app.providers.espn_mma import normalize_event
 
 
 def test_normalizes_espn_event() -> None:

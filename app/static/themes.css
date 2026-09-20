@@ -1,30 +1,30 @@
 :root,
 :root[data-theme="classic"] {
   color-scheme: light;
-  --page-bg: #c8c8c8;
-  --page-pattern: rgba(255, 255, 255, 0.22);
-  --page-text: #161616;
-  --shell-bg: #eeeeec;
-  --panel: #f8f8f6;
+  --page-bg: #d7d5d0;
+  --page-pattern: rgba(255, 255, 255, 0.3);
+  --page-text: #1b1c1e;
+  --shell-bg: #f2f1ed;
+  --panel: #fbfaf7;
   --panel-raised: #ffffff;
-  --panel-inset: #e2e2df;
-  --header-bg: #151515;
+  --panel-inset: #e8e6e1;
+  --header-bg: #17191c;
   --header-text: #ffffff;
-  --line: #a4a4a0;
-  --line-strong: #4e4e4c;
-  --muted: #5e5e5b;
-  --accent: #bd161d;
-  --accent-dark: #790c11;
+  --line: #b9b6af;
+  --line-strong: #52545a;
+  --muted: #62636a;
+  --accent: #b51e25;
+  --accent-dark: #781016;
   --accent-text: #ffffff;
-  --selected-bg: #f1d0d1;
+  --selected-bg: #f3d9da;
   --selected-text: #151515;
   --win: #187841;
   --win-bg: #d7efdf;
   --loss: #a51118;
   --loss-bg: #f3d2d3;
   --link: #8a0c12;
-  --shadow: rgba(0, 0, 0, 0.28);
-  --stripe: rgba(0, 0, 0, 0.035);
+  --shadow: rgba(0, 0, 0, 0.18);
+  --stripe: rgba(0, 0, 0, 0.025);
 }
 
 :root[data-theme="night"] {

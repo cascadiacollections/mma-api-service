@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en" data-theme="classic">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101113">
+    <meta name="description" content="Make and share winner picks for MMA fight cards.">
+    {% if google_site_verification %}
+    <meta name="google-site-verification" content="{{ google_site_verification }}">
+    {% endif %}
+    {% if bing_site_verification %}
+    <meta name="msvalidate.01" content="{{ bing_site_verification }}">
+    {% endif %}
+    <link rel="canonical" href="{{ canonical_url }}">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="MMA Pick'em">
+    <meta
+      property="og:description"
+      content="Make, share, and grade winner picks for MMA fight cards."
+    >
+    <meta property="og:url" content="{{ canonical_url }}">
+    <meta property="og:image" content="{{ social_image_url }}">
+    <meta name="twitter:card" content="summary_large_image">
+    <title>MMA Pick'em</title>
+    <link rel="stylesheet" href="/static/themes.css">
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/theme.js" nonce="{{ csp_nonce }}" defer></script>
+    <script src="/static/picks.js" nonce="{{ csp_nonce }}" defer></script>
+    <script src="/static/app.js" nonce="{{ csp_nonce }}" defer></script>
+    {% if adsense_publisher_id %}
+    <script
+      async
+      nonce="{{ csp_nonce }}"
+      crossorigin="anonymous"
+      src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client={{ adsense_publisher_id }}"
+    ></script>
+    {% endif %}
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <div class="brand-lockup">
+          <span class="brand-badge">MMA</span>
+          <div>
+            <p class="eyebrow">Fight card challenge</p>
+            <h1>Pick'em</h1>
+          </div>
+        </div>
+        <p class="hero-copy">
+          Pick the card. Share one link. Score it after the final bell.
+        </p>
+        <label class="theme-picker" for="theme-select">
+          <span>Theme</span>
+          <select id="theme-select">
+            <option value="classic">Classic</option>
+            <option value="night">Night</option>
+          </select>
+        </label>
+      </header>
+
+      <nav class="primary-nav" aria-label="Primary">
+        <a href="#fight-card">Cards</a>
+        <a href="#bouts">Picks</a>
+        <a href="#score">Score</a>
+        <a href="/about">About</a>
+        <a href="/data-policy">Data</a>
+        <a href="https://github.com/cascadiacollections/mma-api-service">Source</a>
+      </nav>
+
+      <div class="content-grid">
+        <div class="primary-column">
+          <section id="fight-card" class="toolbar panel" aria-label="Event controls">
+            <h2 class="panel-title"><span>01</span> Choose a fight card</h2>
+            <label for="event-select">Event</label>
+            <select id="event-select" disabled>
+              <option>Loading UFC events...</option>
+            </select>
+            <div class="actions">
+              <button id="share-button" class="primary" disabled>Share picks</button>
+              <button id="grade-button" disabled>Grade card</button>
+            </div>
+            <p id="message" class="message" role="status"></p>
+          </section>
+
+          <section id="event-header" class="event-header" hidden></section>
+          <section id="score" class="score" hidden aria-live="polite"></section>
+          <section id="bouts" class="bouts" aria-live="polite"></section>
+        </div>
+
+        <aside class="sidebar" aria-label="Pick'em guide">
+          <section class="side-panel">
+            <h2>How to play</h2>
+            <ol>
+              <li><b>Pick</b> one fighter in each matchup.</li>
+              <li><b>Share</b> the compact link with friends.</li>
+              <li><b>Grade</b> the card when results are final.</li>
+            </ol>
+          </section>
+          <section class="side-panel">
+            <h2>No signup required</h2>
+            <p>
+              Your selections are encoded in the URL fragment and stay out of
+              server logs. No profile, pick database, or wagering.
+            </p>
+          </section>
+          <section class="side-panel side-panel-accent">
+            <h2>Independent project</h2>
+            <p>
+              Built for friendly MMA predictions. Event data can change; verify
+              official sources before relying on a card.
+            </p>
+          </section>
+          {% if adsense_publisher_id and adsense_slot_id %}
+          <section id="ad-slot" class="ad-slot" aria-label="Advertisement">
+            <ins
+              class="adsbygoogle"
+              data-ad-client="{{ adsense_publisher_id }}"
+              data-ad-slot="{{ adsense_slot_id }}"
+              data-ad-format="auto"
+              data-full-width-responsive="true"
+            ></ins>
+            <script nonce="{{ csp_nonce }}">
+              (window.adsbygoogle = window.adsbygoogle || []).push({});
+            </script>
+          </section>
+          {% endif %}
+        </aside>
+      </div>
+
+      <footer id="about" class="site-footer">
+        <p>
+          Unofficial fan project. Not affiliated with or endorsed by UFC, Zuffa, ESPN,
+          or Disney. Event information may change and should not be used for wagering.
+        </p>
+        <nav aria-label="Legal">
+          <a href="/terms">Terms</a>
+          <a href="/privacy">Privacy</a>
+          <a href="/data-policy">Data policy</a>
+          <a href="/about">About</a>
+          <a href="https://github.com/cascadiacollections/mma-api-service">Source</a>
+        </nav>
+      </footer>
+    </main>
+  </body>
+</html>

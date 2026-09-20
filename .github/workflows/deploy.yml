@@ -92,7 +92,32 @@ jobs:
       - name: Deploy to Cloud Run
         env:
           IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
+          PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
+          GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+          BING_SITE_VERIFICATION: ${{ vars.BING_SITE_VERIFICATION }}
+          INDEXNOW_KEY: ${{ vars.INDEXNOW_KEY }}
+          ADSENSE_PUBLISHER_ID: ${{ vars.ADSENSE_PUBLISHER_ID }}
+          ADSENSE_SLOT_ID: ${{ vars.ADSENSE_SLOT_ID }}
         run: |
+          env_vars="LOG_LEVEL=INFO,BUILD_SHA=${{ github.sha }}"
+          if [[ -n "${PUBLIC_BASE_URL}" ]]; then
+            env_vars+=",PUBLIC_BASE_URL=${PUBLIC_BASE_URL}"
+          fi
+          if [[ -n "${GOOGLE_SITE_VERIFICATION}" ]]; then
+            env_vars+=",GOOGLE_SITE_VERIFICATION=${GOOGLE_SITE_VERIFICATION}"
+          fi
+          if [[ -n "${BING_SITE_VERIFICATION}" ]]; then
+            env_vars+=",BING_SITE_VERIFICATION=${BING_SITE_VERIFICATION}"
+          fi
+          if [[ -n "${INDEXNOW_KEY}" ]]; then
+            env_vars+=",INDEXNOW_KEY=${INDEXNOW_KEY}"
+          fi
+          if [[ -n "${ADSENSE_PUBLISHER_ID}" ]]; then
+            env_vars+=",ADSENSE_PUBLISHER_ID=${ADSENSE_PUBLISHER_ID}"
+          fi
+          if [[ -n "${ADSENSE_SLOT_ID}" ]]; then
+            env_vars+=",ADSENSE_SLOT_ID=${ADSENSE_SLOT_ID}"
+          fi
           gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
             --image "${IMAGE}" \
             --project "${{ vars.GCP_PROJECT_ID }}" \
@@ -107,7 +132,7 @@ jobs:
             --timeout 30s \
             --min-instances 0 \
             --max-instances 3 \
-            --set-env-vars LOG_LEVEL=INFO,BUILD_SHA=${{ github.sha }} \
+            --set-env-vars "${env_vars}" \
             --quiet
 
       - name: Verify deployment
