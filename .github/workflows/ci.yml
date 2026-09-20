@@ -22,8 +22,7 @@ jobs:
       - run: uv run ruff format --check .
       - run: uv run ruff check .
       - run: uv run pytest
-      - run: node --check app/static/picks.js
-      - run: node --check app/static/app.js
+      - run: node --test tests/picks.test.js
 
   container:
     runs-on: ubuntu-latest

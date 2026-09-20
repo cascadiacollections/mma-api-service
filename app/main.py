@@ -29,6 +29,11 @@ app = FastAPI(
     title="MMA Pick'em API",
     version="0.1.0",
     description="UFC event cards, winner picks, and pick grading.",
+    contact={
+        "name": "Kevin T. Coughlin",
+        "url": "https://github.com/cascadiacollections/mma-api-service",
+    },
+    license_info={"name": "MIT", "identifier": "MIT"},
     lifespan=lifespan,
 )
 app.add_middleware(GZipMiddleware, minimum_size=500)
@@ -54,12 +59,14 @@ async def add_security_headers(request: Request, call_next):
             "Strict-Transport-Security",
             "max-age=31536000; includeSubDomains",
         )
+    if request.url.path.startswith("/static/"):
+        response.headers.setdefault("Cache-Control", "public, max-age=3600")
     return response
 
 
 @app.get("/", include_in_schema=False)
 async def index() -> FileResponse:
-    return FileResponse(STATIC_DIR / "index.html")
+    return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-cache"})
 
 
 @app.get("/api/health")

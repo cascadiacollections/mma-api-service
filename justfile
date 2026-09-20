@@ -20,8 +20,7 @@ test:
     uv run pytest
 
 check: lint test
-    node --check app/static/picks.js
-    node --check app/static/app.js
+    node --test tests/picks.test.js
 
 container-build:
     docker build --tag mma-api-service:local .

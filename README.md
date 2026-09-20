@@ -100,7 +100,8 @@ The deployment identity should use GitHub OIDC workload identity federation;
 no Google service-account key is required. The workflow deploys with zero
 minimum instances, a three-instance ceiling, one CPU, 512 MiB memory, and
 request-based CPU allocation. Configure `REDIS_URL` separately as a Cloud Run
-secret only if shared caching is needed.
+secret only if shared caching is needed. See
+[`docs/cloud-run.md`](docs/cloud-run.md) for the complete bootstrap procedure.
 
 ## Test
 
