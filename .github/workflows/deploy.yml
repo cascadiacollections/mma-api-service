@@ -104,7 +104,25 @@ jobs:
             --cpu 1 \
             --memory 512Mi \
             --concurrency 80 \
+            --timeout 30s \
             --min-instances 0 \
             --max-instances 3 \
             --set-env-vars LOG_LEVEL=INFO,BUILD_SHA=${{ github.sha }} \
             --quiet
+
+      - name: Verify deployment
+        run: |
+          service_url="$(
+            gcloud run services describe "${{ vars.CLOUD_RUN_SERVICE }}" \
+              --project "${{ vars.GCP_PROJECT_ID }}" \
+              --region "${{ vars.GCP_REGION }}" \
+              --format 'value(status.url)'
+          )"
+          curl \
+            --fail \
+            --retry 8 \
+            --retry-all-errors \
+            --retry-delay 2 \
+            "${service_url}/api/ready"
+          echo "### Deployment" >> "${GITHUB_STEP_SUMMARY}"
+          echo "${service_url}" >> "${GITHUB_STEP_SUMMARY}"

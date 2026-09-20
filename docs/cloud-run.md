@@ -143,3 +143,18 @@ requires VPC connectivity, which adds cost and operational complexity.
   hard-stop spend.
 - Put a CDN in front only after traffic measurements show meaningful origin
   egress or latency savings.
+
+## Roll back
+
+Cloud Run retains prior revisions. List them and move all traffic to a known
+good revision without rebuilding:
+
+```bash
+gcloud run revisions list \
+  --service "${CLOUD_RUN_SERVICE}" \
+  --region "${REGION}"
+
+gcloud run services update-traffic "${CLOUD_RUN_SERVICE}" \
+  --region "${REGION}" \
+  --to-revisions "REVISION_NAME=100"
+```
