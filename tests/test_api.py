@@ -31,6 +31,19 @@ async def test_event_id_must_be_numeric(client: AsyncClient) -> None:
     assert response.status_code == 422
 
 
+@pytest.mark.parametrize(
+    "query",
+    [
+        "start=2026-10-01&end=2026-09-01",
+        "start=2025-01-01&end=2026-12-31",
+    ],
+)
+async def test_rejects_invalid_event_windows(client: AsyncClient, query: str) -> None:
+    response = await client.get(f"/api/events?{query}")
+
+    assert response.status_code == 422
+
+
 async def test_completed_event_has_cache_headers(
     client: AsyncClient,
     monkeypatch: pytest.MonkeyPatch,
