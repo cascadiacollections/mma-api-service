@@ -8,6 +8,7 @@ class Fighter(BaseModel):
     name: str
     record: str | None = None
     country: str | None = None
+    flag_url: str | None = None
     image_url: str | None = None
     espn_profile_url: str | None = None
     tapology_search_url: str | None = None

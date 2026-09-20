@@ -452,10 +452,26 @@ button.primary,
 }
 
 .fighter-record {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
   margin-top: 0.24rem;
   color: var(--muted);
   font-size: 0.66rem;
   font-weight: 600;
+}
+
+.fighter:last-child .fighter-record {
+  flex-direction: row-reverse;
+}
+
+.fighter-flag {
+  display: inline-block;
+  width: 1.125rem;
+  height: 0.75rem;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  object-fit: cover;
 }
 
 .fighter-links {
@@ -681,7 +697,7 @@ button.primary,
   text-align: right;
 }
 
-.event-fighter img {
+.event-fighter-image {
   display: block;
   width: 3rem;
   height: 3rem;
@@ -689,6 +705,16 @@ button.primary,
   background: var(--panel-inset);
   object-fit: cover;
   object-position: center top;
+}
+
+.fighter-record-line {
+  display: flex;
+  gap: 0.3rem;
+  align-items: center;
+}
+
+.event-fighter:last-child .fighter-record-line {
+  flex-direction: row-reverse;
 }
 
 .event-fighter > span {

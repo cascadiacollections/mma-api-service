@@ -126,7 +126,22 @@ function renderEvent() {
       name.textContent = fighter.name;
       const record = document.createElement("span");
       record.className = "fighter-record";
-      record.textContent = [fighter.record, fighter.country].filter(Boolean).join(" · ");
+      if (fighter.flag_url && fighter.country) {
+        const flag = document.createElement("img");
+        flag.className = "fighter-flag";
+        flag.src = fighter.flag_url;
+        flag.alt = `${fighter.country} flag`;
+        flag.width = 18;
+        flag.height = 12;
+        flag.loading = "lazy";
+        flag.decoding = "async";
+        flag.referrerPolicy = "no-referrer";
+        flag.addEventListener("error", () => flag.remove());
+        record.append(flag);
+      }
+      const recordText = document.createElement("span");
+      recordText.textContent = [fighter.record, fighter.country].filter(Boolean).join(" · ");
+      record.append(recordText);
       identity.append(name, record);
       button.append(identity);
 

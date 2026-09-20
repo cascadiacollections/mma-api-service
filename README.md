@@ -69,10 +69,10 @@ service or scraper. The adapter contains transport, validation, normalization,
 and caching so the API layer remains replaceable when a licensed provider is
 adopted.
 
-Fighter cards use ESPN athlete identifiers for attributed ESPN profile links
-and lazy-loaded ESPN CDN headshots. Record links open a Tapology name search;
-the application does not scrape Tapology or attempt to guess its internal
-numeric fighter IDs.
+Fighter cards use ESPN athlete identifiers for attributed ESPN profile links,
+lazy-loaded ESPN CDN headshots, and country flags supplied by the event feed.
+Record links open a Tapology name search; the application does not scrape
+Tapology or attempt to guess its internal numeric fighter IDs.
 
 Upstream requests are coalesced and cached according to event volatility:
 

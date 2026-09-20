@@ -63,6 +63,7 @@
                   aria-label="{{ fighter.name }} profile on ESPN"
                 >
                   <img
+                    class="event-fighter-image"
                     src="{{ fighter.image_url }}"
                     alt=""
                     width="56"
@@ -75,7 +76,27 @@
                 {% endif %}
                 <span>
                   <strong>{{ fighter.name }}</strong>
-                  {% if fighter.record %}<small>{{ fighter.record }}</small>{% endif %}
+                  {% if fighter.record or fighter.country %}
+                  <small class="fighter-record-line">
+                    {% if fighter.flag_url and fighter.country %}
+                    <img
+                      class="fighter-flag"
+                      src="{{ fighter.flag_url }}"
+                      alt="{{ fighter.country }} flag"
+                      width="18"
+                      height="12"
+                      loading="lazy"
+                      decoding="async"
+                      referrerpolicy="no-referrer"
+                    >
+                    {% endif %}
+                    <span>
+                      {% if fighter.record %}{{ fighter.record }}{% endif %}
+                      {% if fighter.record and fighter.country %} · {% endif %}
+                      {% if fighter.country %}{{ fighter.country }}{% endif %}
+                    </span>
+                  </small>
+                  {% endif %}
                   <small class="fighter-source-links">
                     {% if fighter.tapology_search_url %}
                     <a

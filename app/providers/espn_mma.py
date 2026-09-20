@@ -210,6 +210,7 @@ def _normalize_fighter(raw_competitor: dict[str, Any]) -> Fighter:
         name=fighter_name,
         record=overall_record,
         country=flag.get("alt"),
+        flag_url=flag.get("href"),
         image_url=f"https://a.espncdn.com/i/headshots/mma/players/full/{fighter_id}.png",
         espn_profile_url=f"https://www.espn.com/mma/fighter/_/id/{fighter_id}",
         tapology_search_url=f"https://www.tapology.com/search?term={quote_plus(fighter_name)}",
