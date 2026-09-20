@@ -4,14 +4,20 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "features": {
-    "ghcr.io/devcontainers/features/github-cli:1": {}
-  },
-  "mounts": [
-    "source=mma-api-uv-cache,target=/home/vscode/.cache/uv,type=volume"
-  ],
+  "remoteUser": "vscode",
+  "containerUser": "vscode",
+  "updateRemoteUserUID": true,
+  // No named volume for the uv cache: under rootless Podman the volume is
+  // created root-owned and `uv sync` then fails with EACCES in
+  // postCreateCommand. An image-owned cache directory works on every engine.
   "containerEnv": {
-    "UV_LINK_MODE": "copy"
+    "UV_LINK_MODE": "copy",
+    "UV_CACHE_DIR": "/home/vscode/.cache/uv"
+  },
+  // Resolved against the real workspace folder, so a clone directory with
+  // any name still puts the project venv first on PATH.
+  "remoteEnv": {
+    "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
   },
   "postCreateCommand": "uv sync --frozen",
   "forwardPorts": [8000],
@@ -37,6 +43,5 @@
         }
       }
     }
-  },
-  "remoteUser": "vscode"
+  }
 }
