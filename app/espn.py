@@ -11,6 +11,7 @@ from weakref import WeakValueDictionary
 
 import httpx
 from fastapi import HTTPException
+from pydantic import ValidationError
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
@@ -172,6 +173,8 @@ def normalize_event(raw_event: dict[str, Any]) -> Event:
 
     for order, competition in enumerate(raw_event.get("competitions", []), start=1):
         raw_competitors = competition.get("competitors", [])
+        if len(raw_competitors) != 2:
+            raise ValueError(f"Bout {competition.get('id', 'unknown')} does not have two fighters")
         fighters = [_normalize_fighter(competitor) for competitor in raw_competitors]
         bout_status = competition.get("status", {}).get("type", {})
         winner = next(
@@ -204,11 +207,16 @@ async def list_events(start: date, end: date) -> list[EventSummary]:
             "limit": "100",
         }
     )
-    events = [
-        normalize_event_summary(raw_event)
-        for raw_event in payload["events"]
-        if _is_ufc_event(raw_event)
-    ]
+    try:
+        events = [
+            normalize_event_summary(raw_event)
+            for raw_event in payload["events"]
+            if _is_ufc_event(raw_event)
+        ]
+    except (KeyError, TypeError, ValueError, ValidationError) as exc:
+        raise HTTPException(
+            status_code=502, detail="UFC event provider data is incomplete"
+        ) from exc
     return sorted(events, key=lambda event: event.date)
 
 
@@ -220,7 +228,12 @@ async def get_event(event_id: str) -> Event:
     )
     if raw_event is None or not _is_ufc_event(raw_event):
         raise HTTPException(status_code=404, detail="UFC event not found")
-    return normalize_event(raw_event)
+    try:
+        return normalize_event(raw_event)
+    except (KeyError, TypeError, ValueError, ValidationError) as exc:
+        raise HTTPException(
+            status_code=502, detail="UFC event provider data is incomplete"
+        ) from exc
 
 
 def default_event_window() -> tuple[date, date]:

@@ -82,9 +82,9 @@ The image exposes `/api/health` as its container health check and reads:
 ## Delivery
 
 Pull requests run formatting, linting, tests, JavaScript syntax checks, an image
-build, and a container smoke test. Merges to `main` publish commit and `latest`
-images to GHCR and deploy the same image digest from Google Artifact Registry
-to Cloud Run.
+build, and a container smoke test. Merges to `main` always publish commit and
+`latest` images to GHCR. Cloud Run deployment runs only after the Google Cloud
+repository variables below are configured.
 
 Configure the GitHub `production` environment with these repository variables:
 

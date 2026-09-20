@@ -92,6 +92,7 @@ function renderEvent() {
       button.className = "fighter";
       button.type = "button";
       button.dataset.fighterId = fighter.id;
+      button.setAttribute("aria-pressed", picks[bout.id] === fighter.id ? "true" : "false");
       const name = document.createElement("strong");
       name.className = "fighter-name";
       name.textContent = fighter.name;

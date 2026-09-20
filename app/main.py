@@ -3,7 +3,9 @@ from contextlib import asynccontextmanager
 from datetime import date
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException, Query, Response
+from fastapi import FastAPI, HTTPException, Query, Request, Response
+from fastapi import Path as ApiPath
+from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -27,7 +29,30 @@ app = FastAPI(
     description="UFC event cards, winner picks, and pick grading.",
     lifespan=lifespan,
 )
+app.add_middleware(GZipMiddleware, minimum_size=500)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; base-uri 'none'; connect-src 'self'; "
+        "form-action 'none'; frame-ancestors 'none'; img-src 'self' data:; "
+        "script-src 'self'; style-src 'self'",
+    )
+    response.headers.setdefault("Cross-Origin-Opener-Policy", "same-origin")
+    response.headers.setdefault("Permissions-Policy", "camera=(), geolocation=(), microphone=()")
+    response.headers.setdefault("Referrer-Policy", "no-referrer")
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    if request.url.scheme == "https":
+        response.headers.setdefault(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains",
+        )
+    return response
 
 
 @app.get("/", include_in_schema=False)
@@ -65,7 +90,10 @@ async def events(
 
 
 @app.get("/api/events/{event_id}", response_model=Event)
-async def event(event_id: str, response: Response) -> Event:
+async def event(
+    response: Response,
+    event_id: str = ApiPath(pattern=r"^\d{6,20}$"),
+) -> Event:
     ufc_event = await get_event(event_id)
     if ufc_event.completed:
         response.headers["Cache-Control"] = "public, max-age=86400, s-maxage=604800, immutable"
@@ -77,5 +105,8 @@ async def event(event_id: str, response: Response) -> Event:
 
 
 @app.post("/api/events/{event_id}/grade", response_model=GradeReport)
-async def grade(event_id: str, submission: PickSubmission) -> GradeReport:
+async def grade(
+    submission: PickSubmission,
+    event_id: str = ApiPath(pattern=r"^\d{6,20}$"),
+) -> GradeReport:
     return grade_picks(await get_event(event_id), submission)
