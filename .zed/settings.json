@@ -1,0 +1,59 @@
+// Project settings for Zed.
+// Mirrors the ruff/pytest setup in .devcontainer/devcontainer.json so the
+// editor, the dev container and `just check` all agree.
+//
+// Ruff reads its own config (line-length, lint rules) from pyproject.toml --
+// deliberately not duplicated here.
+{
+  "format_on_save": "on",
+  "ensure_final_newline_on_save": true,
+  "remove_trailing_whitespace_on_save": true,
+  "languages": {
+    "Python": {
+      "language_servers": ["pyright", "ruff"],
+      "format_on_save": "on",
+      "formatter": [
+        {
+          "language_server": {
+            "name": "ruff"
+          }
+        }
+      ],
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true,
+        "source.fixAll.ruff": true
+      }
+    },
+    "JavaScript": {
+      "tab_size": 2
+    },
+    "JSON": {
+      "tab_size": 2
+    }
+  },
+  "lsp": {
+    "pyright": {
+      "settings": {
+        "python": {
+          "pythonPath": ".venv/bin/python"
+        }
+      }
+    }
+  },
+  "terminal": {
+    "detect_venv": {
+      "on": {
+        "directories": [".venv"],
+        "activate_script": "default"
+      }
+    }
+  },
+  "file_scan_exclusions": [
+    "**/.git",
+    "**/.venv",
+    "**/.ruff_cache",
+    "**/.pytest_cache",
+    "**/__pycache__",
+    "**/node_modules"
+  ]
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "label": "just check",
+    "command": "just",
+    "args": ["check"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "just test",
+    "command": "just",
+    "args": ["test"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "just lint",
+    "command": "just",
+    "args": ["lint"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "just format",
+    "command": "just",
+    "args": ["format"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "just dev (serve on :8000)",
+    "command": "just",
+    "args": ["dev"],
+    "reveal": "always",
+    "use_new_terminal": true
+  },
+  {
+    "label": "pytest: current file",
+    "command": "uv",
+    "args": ["run", "pytest", "$ZED_RELATIVE_FILE"],
+    "reveal": "always",
+    "use_new_terminal": false
+  },
+  {
+    "label": "pytest: function under cursor",
+    "command": "uv",
+    "args": ["run", "pytest", "$ZED_RELATIVE_FILE", "-k", "$ZED_SYMBOL", "-v"],
+    "reveal": "always",
+    "use_new_terminal": false
+  }
+]
