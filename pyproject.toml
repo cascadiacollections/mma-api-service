@@ -1,7 +1,7 @@
 [project]
 name = "mma-api-service"
 version = "0.1.0"
-description = "REST API and web interface for UFC pick'em cards"
+description = "REST API and web interface for MMA fight-card pick'em"
 readme = "README.md"
 requires-python = ">=3.12"
 license = "MIT"

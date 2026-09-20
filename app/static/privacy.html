@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101113">
+    <title>Privacy — MMA Pick'em</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell legal">
+      <a class="legal-back" href="/">← Back to MMA Pick'em</a>
+      <h1>Privacy notice</h1>
+      <p class="effective">Effective September 20, 2026</p>
+
+      <h2>No accounts or pick database</h2>
+      <p>
+        MMA Pick'em does not create user accounts, set application cookies, use
+        advertising trackers, or store submitted picks in a server-side database.
+        Shared picks are encoded in the URL fragment after the <code>#</code>. Web
+        browsers do not send that fragment with the page request.
+      </p>
+
+      <h2>Operational logs</h2>
+      <p>
+        The hosting platform, network provider, or reverse proxy may temporarily log
+        ordinary request information such as IP address, user agent, timestamp,
+        requested path, response status, and latency. URL fragments containing picks
+        are not included. Retention and access are controlled by the deployment
+        operator and hosting provider.
+      </p>
+
+      <h2>Event data and cache</h2>
+      <p>
+        The server requests event information from a third-party provider and may
+        cache that event information in memory or Redis. The cache contains event
+        data, not user identities or shared picks.
+      </p>
+
+      <h2>External links</h2>
+      <p>
+        Links to GitHub or other sites are governed by those services' privacy
+        practices. This notice does not cover independently operated deployments of
+        the open-source project.
+      </p>
+
+      <h2>Children</h2>
+      <p>
+        The service is not directed to children under 13 and does not knowingly
+        collect personal information from them.
+      </p>
+
+      <h2>Questions</h2>
+      <p>
+        Privacy questions may be directed to the repository owner through the
+        <a href="https://github.com/cascadiacollections/mma-api-service">project repository</a>.
+        Do not include private information in a public issue.
+      </p>
+    </main>
+  </body>
+</html>

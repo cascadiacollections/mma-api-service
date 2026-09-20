@@ -12,7 +12,7 @@ RUN uv sync --frozen --no-dev --no-install-project
 FROM python:3.13-slim@sha256:8d9d0b8bcf6506481eae4907c18f5e3e7902e629f5f6d684f9e7c32e85e3ddf0 AS runtime
 
 LABEL org.opencontainers.image.title="MMA Pick'em API" \
-      org.opencontainers.image.description="FastAPI UFC pick sharing and grading service" \
+      org.opencontainers.image.description="FastAPI MMA fight-card pick sharing and grading service" \
       org.opencontainers.image.source="https://github.com/cascadiacollections/mma-api-service" \
       org.opencontainers.image.licenses="MIT"
 

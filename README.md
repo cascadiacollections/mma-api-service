@@ -1,8 +1,8 @@
 # MMA Pick'em
 
-A FastAPI-backed UFC pick'em web app. It loads UFC cards from ESPN, lets users
-pick each bout winner, stores the picks in a shareable URL, and grades completed
-cards into win/loss/pending/void results.
+A FastAPI-backed MMA pick'em web app currently covering UFC fight cards. It lets
+users pick each bout winner, stores the picks in a shareable URL, and grades
+completed cards into win/loss/pending/void results.
 
 ## Run locally
 
@@ -127,3 +127,15 @@ Event data is retrieved from ESPN's public UFC scoreboard feed. UFC, ESPN, and
 fighter names and marks belong to their respective owners. This project is not
 affiliated with or endorsed by UFC or ESPN. Deployments should retain the cache
 policy and avoid unnecessary automated requests to the upstream service.
+
+The application publishes user-facing
+[Terms](app/static/terms.html), [Privacy](app/static/privacy.html), and
+[Event Data Policy](app/static/data-policy.html) documents at `/terms`,
+`/privacy`, and `/data-policy`. These notices do not grant a data license or
+replace legal review.
+
+Commercial launch, advertising, sponsorship, paid access, or prizes are gated
+on replacing the undocumented feed with a licensed source or obtaining written
+permission, reviewing branding, and receiving qualified legal approval for the
+intended business model and jurisdictions. See the
+[legal launch checklist](docs/legal-launch-checklist.md).

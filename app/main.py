@@ -28,7 +28,7 @@ async def lifespan(_: FastAPI) -> AsyncIterator[None]:
 app = FastAPI(
     title="MMA Pick'em API",
     version="0.1.0",
-    description="UFC event cards, winner picks, and pick grading.",
+    description="MMA fight cards, winner picks, and pick grading.",
     contact={
         "name": "Kevin T. Coughlin",
         "url": "https://github.com/cascadiacollections/mma-api-service",
@@ -67,6 +67,25 @@ async def add_security_headers(request: Request, call_next):
 @app.get("/", include_in_schema=False)
 async def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html", headers={"Cache-Control": "no-cache"})
+
+
+def legal_document(filename: str) -> FileResponse:
+    return FileResponse(STATIC_DIR / filename, headers={"Cache-Control": "public, max-age=3600"})
+
+
+@app.get("/terms", include_in_schema=False)
+async def terms() -> FileResponse:
+    return legal_document("terms.html")
+
+
+@app.get("/privacy", include_in_schema=False)
+async def privacy() -> FileResponse:
+    return legal_document("privacy.html")
+
+
+@app.get("/data-policy", include_in_schema=False)
+async def data_policy() -> FileResponse:
+    return legal_document("data-policy.html")
 
 
 @app.get("/api/health")
