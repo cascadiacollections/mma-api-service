@@ -57,6 +57,18 @@ Fragments stay in the browser and are not sent in the page request. Previously
 shared query-string, compact, and base64url JSON links remain supported. No
 account, database, or server-side pick storage is required for the MVP.
 
+The interface uses semantic tokens from `app/static/themes.css`. The compact
+Classic theme is the default, and the Night theme demonstrates how additional
+themes can be added without changing component layout. A user's theme choice is
+stored only in browser local storage.
+
+The ESPN integration lives behind the isolated
+`app.providers.espn_mma` adapter. No suitable maintained package exposes the
+same lightweight ESPN scoreboard contract without adding another hosted data
+service or scraper. The adapter contains transport, validation, normalization,
+and caching so the API layer remains replaceable when a licensed provider is
+adopted.
+
 Upstream requests are coalesced and cached according to event volatility:
 
 - Event lists: 10 minutes
@@ -86,6 +98,12 @@ The image exposes `/api/health` as its container health check and reads:
 | --- | --- | --- |
 | `PORT` | `8080` | HTTP listener |
 | `LOG_LEVEL` | `INFO` | Uvicorn log level |
+| `PUBLIC_BASE_URL` | request origin | Canonical custom-domain URL |
+| `GOOGLE_SITE_VERIFICATION` | unset | Optional Search Console meta token |
+| `BING_SITE_VERIFICATION` | unset | Optional Bing Webmaster Tools meta token |
+| `INDEXNOW_KEY` | unset | Optional IndexNow ownership key |
+| `ADSENSE_PUBLISHER_ID` | unset | Optional `ca-pub-…` AdSense publisher ID |
+| `ADSENSE_SLOT_ID` | unset | Optional responsive ad-unit slot ID |
 | `REDIS_URL` | unset | Optional shared cache |
 
 ## Delivery
@@ -111,6 +129,13 @@ minimum instances, a three-instance ceiling, one CPU, 512 MiB memory, and
 request-based CPU allocation. Configure `REDIS_URL` separately as a Cloud Run
 secret only if shared caching is needed. See
 [`docs/cloud-run.md`](docs/cloud-run.md) for the complete bootstrap procedure.
+
+The service provides `robots.txt`, a dynamic `sitemap.xml`, crawlable event
+pages, canonical links, social metadata, structured event data, optional
+Google/Bing verification tags, IndexNow support, optional `ads.txt`, and an
+AdSense loader that remains disabled by default. See
+[`docs/seo-adsense.md`](docs/seo-adsense.md) for custom-domain, Search Console,
+consent, content-quality, and AdSense setup.
 
 ## Test
 

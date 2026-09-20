@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#151515"/>
+  <path d="M0 470H1200V630H0Z" fill="#b6151c"/>
+  <path d="M760 0H900L620 470H480Z" fill="#242424"/>
+  <text x="90" y="160" fill="#d9d9d9" font-family="Arial, sans-serif" font-size="28" font-weight="700" letter-spacing="7">FIGHT NIGHT PICKS</text>
+  <text x="80" y="330" fill="#e52d34" font-family="Arial Black, Arial, sans-serif" font-size="150" font-style="italic" font-weight="900">MMA</text>
+  <text x="80" y="450" fill="#ffffff" font-family="Arial Black, Arial, sans-serif" font-size="125" font-style="italic" font-weight="900">PICK'EM</text>
+  <text x="90" y="550" fill="#ffffff" font-family="Arial, sans-serif" font-size="34" font-weight="700">PICK · SHARE · GRADE</text>
+</svg>

@@ -10,19 +10,38 @@ from typing import Any
 from weakref import WeakValueDictionary
 
 import httpx
-from fastapi import HTTPException
 from pydantic import ValidationError
 from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from app.models import Bout, Event, EventSummary, Fighter
 
-ESPN_SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard"
+SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard"
 UPSTREAM_TIMEOUT_SECONDS = 10.0
 MAX_CACHE_ENTRIES = 256
 REDIS_URL = os.getenv("REDIS_URL")
 REDIS_PREFIX = "mma:scoreboard:"
 logger = logging.getLogger(__name__)
+
+
+class EspnMmaError(RuntimeError):
+    """Base error for the ESPN MMA provider."""
+
+
+class EspnMmaTimeoutError(EspnMmaError):
+    """The provider did not respond before the configured timeout."""
+
+
+class EspnMmaRequestError(EspnMmaError):
+    """The provider request failed."""
+
+
+class EspnMmaDataError(EspnMmaError):
+    """The provider returned malformed or incomplete data."""
+
+
+class EspnMmaEventNotFoundError(EspnMmaError):
+    """The requested event was not returned by the provider."""
 
 
 @dataclass
@@ -111,7 +130,7 @@ async def _store_cached(key: str, payload: dict[str, Any], ttl: int) -> None:
             logger.exception("Shared cache write failed; process cache remains active")
 
 
-async def close_cache() -> None:
+async def close() -> None:
     global _http_client
     if _redis is not None:
         await _redis.aclose()
@@ -133,19 +152,23 @@ async def fetch_scoreboard(params: dict[str, str]) -> dict[str, Any]:
             return cached
 
         try:
-            response = await _get_http_client().get(ESPN_SCOREBOARD_URL, params=params)
+            response = await _get_http_client().get(SCOREBOARD_URL, params=params)
             response.raise_for_status()
         except httpx.TimeoutException as exc:
-            raise HTTPException(status_code=504, detail="UFC event provider timed out") from exc
+            raise EspnMmaTimeoutError("UFC event provider timed out") from exc
         except httpx.HTTPError as exc:
-            raise HTTPException(
-                status_code=502,
-                detail="UFC event provider request failed",
-            ) from exc
+            raise EspnMmaRequestError("UFC event provider request failed") from exc
 
-        payload = response.json()
-        if not isinstance(payload, dict) or not isinstance(payload.get("events"), list):
-            raise HTTPException(status_code=502, detail="UFC event provider returned invalid data")
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise EspnMmaDataError("UFC event provider returned invalid JSON") from exc
+        if (
+            not isinstance(payload, dict)
+            or not isinstance(payload.get("events"), list)
+            or not all(isinstance(event, dict) for event in payload["events"])
+        ):
+            raise EspnMmaDataError("UFC event provider returned invalid data")
 
         await _store_cached(
             key,
@@ -220,6 +243,22 @@ def normalize_event(raw_event: dict[str, Any]) -> Event:
     return Event(**summary.model_dump(), bouts=bouts)
 
 
+def default_event_window() -> tuple[date, date]:
+    today = date.today()
+    return today - timedelta(days=14), today + timedelta(days=180)
+
+
+def _event_from_payload(payload: dict[str, Any], event_id: str) -> dict[str, Any] | None:
+    return next(
+        (
+            event
+            for event in payload["events"]
+            if str(event.get("id")) == event_id and _is_ufc_event(event)
+        ),
+        None,
+    )
+
+
 async def list_events(start: date, end: date) -> list[EventSummary]:
     payload = await fetch_scoreboard(
         {
@@ -234,28 +273,27 @@ async def list_events(start: date, end: date) -> list[EventSummary]:
             if _is_ufc_event(raw_event)
         ]
     except (KeyError, TypeError, ValueError, ValidationError) as exc:
-        raise HTTPException(
-            status_code=502, detail="UFC event provider data is incomplete"
-        ) from exc
+        raise EspnMmaDataError("UFC event provider data is incomplete") from exc
     return sorted(events, key=lambda event: event.date)
 
 
 async def get_event(event_id: str) -> Event:
     payload = await fetch_scoreboard({"event": event_id})
-    raw_event = next(
-        (event for event in payload["events"] if str(event.get("id")) == event_id),
-        None,
-    )
-    if raw_event is None or not _is_ufc_event(raw_event):
-        raise HTTPException(status_code=404, detail="UFC event not found")
+    raw_event = _event_from_payload(payload, event_id)
+
+    if raw_event is None:
+        start, end = default_event_window()
+        fallback_payload = await fetch_scoreboard(
+            {
+                "dates": f"{start:%Y%m%d}-{end:%Y%m%d}",
+                "limit": "100",
+            }
+        )
+        raw_event = _event_from_payload(fallback_payload, event_id)
+
+    if raw_event is None:
+        raise EspnMmaEventNotFoundError("UFC event not found")
     try:
         return normalize_event(raw_event)
     except (KeyError, TypeError, ValueError, ValidationError) as exc:
-        raise HTTPException(
-            status_code=502, detail="UFC event provider data is incomplete"
-        ) from exc
-
-
-def default_event_window() -> tuple[date, date]:
-    today = date.today()
-    return today - timedelta(days=14), today + timedelta(days=180)
+        raise EspnMmaDataError("UFC event provider data is incomplete") from exc

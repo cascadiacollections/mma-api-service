@@ -21,6 +21,7 @@ classifiers = [
 dependencies = [
   "fastapi>=0.117.1,<1",
   "httpx>=0.28.1,<1",
+  "jinja2>=3.1.6,<4",
   "redis>=6.4.0,<7",
   "uvicorn[standard]>=0.36.0,<1",
 ]

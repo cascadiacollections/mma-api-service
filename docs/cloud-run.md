@@ -114,6 +114,32 @@ gh variable set GCP_DEPLOY_SERVICE_ACCOUNT \
 Create a protected GitHub environment named `production` and optionally require
 review before deployment.
 
+After a custom domain is serving the application, set its canonical origin:
+
+```bash
+gh variable set PUBLIC_BASE_URL \
+  --repo cascadiacollections/mma-api-service \
+  --body "https://picks.example.com"
+```
+
+Optional webmaster integration values can be configured after domain
+verification is planned:
+
+```bash
+gh variable set GOOGLE_SITE_VERIFICATION \
+  --repo cascadiacollections/mma-api-service \
+  --body "google-verification-token"
+gh variable set BING_SITE_VERIFICATION \
+  --repo cascadiacollections/mma-api-service \
+  --body "bing-verification-token"
+gh variable set INDEXNOW_KEY \
+  --repo cascadiacollections/mma-api-service \
+  --body "random-indexnow-key"
+```
+
+DNS verification is preferred when available. See
+[`seo-adsense.md`](seo-adsense.md) before enabling IndexNow or advertising.
+
 ## 6. Optional shared cache
 
 The service defaults to a bounded process cache, which is usually sufficient
