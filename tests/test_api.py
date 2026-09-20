@@ -25,6 +25,35 @@ async def test_health_and_security_headers(client: AsyncClient) -> None:
     assert response.headers["x-frame-options"] == "DENY"
 
 
+async def test_homepage_uses_neutral_branding_and_disclosure(client: AsyncClient) -> None:
+    response = await client.get("/")
+
+    assert response.status_code == 200
+    assert "<h1>MMA Pick'em</h1>" in response.text
+    assert "Not affiliated with or endorsed by UFC" in response.text
+    assert "<h1>UFC Pick'em</h1>" not in response.text
+
+
+@pytest.mark.parametrize(
+    ("path", "heading"),
+    [
+        ("/terms", "Terms of use"),
+        ("/privacy", "Privacy notice"),
+        ("/data-policy", "Event data policy"),
+    ],
+)
+async def test_legal_documents_are_public(
+    client: AsyncClient,
+    path: str,
+    heading: str,
+) -> None:
+    response = await client.get(path)
+
+    assert response.status_code == 200
+    assert f"<h1>{heading}</h1>" in response.text
+    assert response.headers["cache-control"] == "public, max-age=3600"
+
+
 async def test_event_id_must_be_numeric(client: AsyncClient) -> None:
     response = await client.get("/api/events/not-an-event")
 

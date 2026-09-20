@@ -167,6 +167,49 @@ button.primary {
   margin-top: 1rem;
 }
 
+.site-footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.site-footer nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-top: 0.75rem;
+}
+
+.site-footer a,
+.legal a {
+  color: #d7d9de;
+}
+
+.legal {
+  line-height: 1.65;
+}
+
+.legal h1 {
+  margin-bottom: 1rem;
+  font-size: clamp(2.2rem, 7vw, 4rem);
+}
+
+.legal h2 {
+  margin-top: 2rem;
+}
+
+.legal .effective {
+  color: var(--muted);
+}
+
+.legal-back {
+  display: inline-block;
+  margin-bottom: 1.5rem;
+}
+
 .bout {
   display: grid;
   grid-template-columns: 8rem 1fr;

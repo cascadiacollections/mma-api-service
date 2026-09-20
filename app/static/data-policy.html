@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101113">
+    <title>Data policy — MMA Pick'em</title>
+    <link rel="stylesheet" href="/static/styles.css">
+  </head>
+  <body>
+    <main class="shell legal">
+      <a class="legal-back" href="/">← Back to MMA Pick'em</a>
+      <h1>Event data policy</h1>
+      <p class="effective">Effective September 20, 2026</p>
+
+      <h2>Current source and scope</h2>
+      <p>
+        The service currently normalizes a limited set of factual event information
+        from ESPN's publicly reachable UFC scoreboard feed: event names and dates,
+        bout identifiers, fighter names and records, weight classes, statuses, and
+        winner indicators. It does not copy articles, commentary, video, photography,
+        logos, betting lines, or broadcast content.
+      </p>
+
+      <h2>Responsible access</h2>
+      <p>
+        Requests are made by the server with an identifying user agent. Concurrent
+        requests are coalesced, scheduled and live cards use bounded refresh periods,
+        and completed cards are cached for up to 24 hours. The browser never contacts
+        the event provider directly.
+      </p>
+
+      <h2>No affiliation or data license claim</h2>
+      <p>
+        Public technical availability does not imply endorsement or a commercial
+        data license. ESPN, Disney, UFC, Zuffa, event names, fighter names, and related
+        marks belong to their respective owners. The service will not bypass
+        authentication, CAPTCHAs, rate limits, paywalls, or other access controls.
+      </p>
+
+      <h2>Provider changes and rights concerns</h2>
+      <p>
+        The provider adapter is isolated so it can be replaced with a licensed source
+        before commercial operation or if access terms change. Rights holders may
+        raise attribution, access, or removal concerns through the
+        <a href="https://github.com/cascadiacollections/mma-api-service">project repository</a>
+        or the repository owner's GitHub profile. Confidential notices should not be
+        posted in public issues.
+      </p>
+    </main>
+  </body>
+</html>
