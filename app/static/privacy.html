@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="classic">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#101113">
     <title>Privacy — MMA Pick'em</title>
+    <link rel="stylesheet" href="/static/themes.css">
     <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/theme.js" defer></script>
   </head>
   <body>
     <main class="shell legal">
@@ -19,6 +21,13 @@
         advertising trackers, or store submitted picks in a server-side database.
         Shared picks are encoded in the URL fragment after the <code>#</code>. Web
         browsers do not send that fragment with the page request.
+      </p>
+
+      <h2>Theme preference</h2>
+      <p>
+        If you choose a visual theme, the browser stores that preference locally
+        under <code>mma-pickem-theme</code>. It is not transmitted to the server and
+        can be removed by clearing site storage.
       </p>
 
       <h2>Operational logs</h2>

@@ -29,9 +29,11 @@ async def test_homepage_uses_neutral_branding_and_disclosure(client: AsyncClient
     response = await client.get("/")
 
     assert response.status_code == 200
-    assert "<h1>MMA Pick'em</h1>" in response.text
+    assert "<h1><span>MMA</span> Pick'em</h1>" in response.text
     assert "Not affiliated with or endorsed by UFC" in response.text
     assert "<h1>UFC Pick'em</h1>" not in response.text
+    assert 'id="theme-select"' in response.text
+    assert 'href="/static/themes.css"' in response.text
 
 
 @pytest.mark.parametrize(

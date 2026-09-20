@@ -57,6 +57,11 @@ Fragments stay in the browser and are not sent in the page request. Previously
 shared query-string, compact, and base64url JSON links remain supported. No
 account, database, or server-side pick storage is required for the MVP.
 
+The interface uses semantic tokens from `app/static/themes.css`. The compact
+Classic theme is the default, and the Night theme demonstrates how additional
+themes can be added without changing component layout. A user's theme choice is
+stored only in browser local storage.
+
 Upstream requests are coalesced and cached according to event volatility:
 
 - Event lists: 10 minutes

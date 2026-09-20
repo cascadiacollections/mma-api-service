@@ -21,6 +21,8 @@ test:
 
 check: lint test
     node --test tests/picks.test.js
+    node --check app/static/app.js
+    node --check app/static/theme.js
 
 audit:
     uv export --frozen --no-dev --format requirements-txt --no-hashes | uvx --from pip-audit pip-audit -r /dev/stdin
