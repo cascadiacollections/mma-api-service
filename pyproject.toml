@@ -32,7 +32,7 @@ Repository = "https://github.com/cascadiacollections/mma-api-service"
 
 [dependency-groups]
 dev = [
-  "pytest>=8.4.2,<9",
+  "pytest>=9.0.3,<10",
   "pytest-asyncio>=1.2.0,<2",
   "ruff>=0.13.1,<1",
 ]
