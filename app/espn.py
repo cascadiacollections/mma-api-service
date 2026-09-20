@@ -49,7 +49,7 @@ def _payload_ttl(payload: dict[str, Any], *, event_lookup: bool) -> int:
     if events and all(
         event.get("status", {}).get("type", {}).get("completed") is True for event in events
     ):
-        return 604_800
+        return 86_400
     if any(event.get("status", {}).get("type", {}).get("state") == "in" for event in events):
         return 15
     return 900

@@ -1,3 +1,4 @@
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from datetime import date
@@ -15,6 +16,7 @@ from app.models import Event, EventSummary, GradeReport, PickSubmission
 
 BASE_DIR = Path(__file__).resolve().parent
 STATIC_DIR = BASE_DIR / "static"
+REVISION = os.getenv("K_REVISION") or os.getenv("BUILD_SHA") or "development"
 
 
 @asynccontextmanager
@@ -62,7 +64,7 @@ async def index() -> FileResponse:
 
 @app.get("/api/health")
 async def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {"status": "ok", "revision": REVISION}
 
 
 @app.get("/api/ready")
@@ -96,7 +98,7 @@ async def event(
 ) -> Event:
     ufc_event = await get_event(event_id)
     if ufc_event.completed:
-        response.headers["Cache-Control"] = "public, max-age=86400, s-maxage=604800, immutable"
+        response.headers["Cache-Control"] = "public, max-age=3600, s-maxage=86400"
     elif ufc_event.status.lower() in {"in progress", "live"}:
         response.headers["Cache-Control"] = "public, max-age=5, s-maxage=15"
     else:

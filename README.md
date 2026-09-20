@@ -53,7 +53,7 @@ Upstream requests are coalesced and cached according to event volatility:
 - Event lists: 10 minutes
 - Scheduled cards: 15 minutes
 - Live cards: 15 seconds
-- Completed cards: 7 days
+- Completed cards: 24 hours, allowing eventual result corrections
 
 GET responses also include matching browser/CDN cache directives. Sharing picks
 does not call the API, and grading reuses the cached card whenever possible.

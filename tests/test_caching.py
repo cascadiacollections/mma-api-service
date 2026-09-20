@@ -21,7 +21,7 @@ def test_event_list_cache_ttl() -> None:
 
 
 def test_completed_event_cache_ttl() -> None:
-    assert _payload_ttl(event_payload(completed=True, state="post"), event_lookup=True) == 604_800
+    assert _payload_ttl(event_payload(completed=True, state="post"), event_lookup=True) == 86_400
 
 
 def test_live_event_cache_ttl() -> None:

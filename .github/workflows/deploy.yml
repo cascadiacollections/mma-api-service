@@ -104,5 +104,5 @@ jobs:
             --concurrency 80 \
             --min-instances 0 \
             --max-instances 3 \
-            --set-env-vars LOG_LEVEL=INFO \
+            --set-env-vars LOG_LEVEL=INFO,BUILD_SHA=${{ github.sha }} \
             --quiet
