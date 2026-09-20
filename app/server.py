@@ -11,6 +11,7 @@ def main() -> None:
         log_level=os.getenv("LOG_LEVEL", "info").lower(),
         proxy_headers=True,
         forwarded_allow_ips="*",
+        server_header=False,
         workers=1,
     )
 
