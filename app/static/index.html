@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#101113">
+    <title>UFC Pick'em</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/picks.js" defer></script>
+    <script src="/static/app.js" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header class="hero">
+        <p class="eyebrow">Fight night picks</p>
+        <h1>UFC Pick'em</h1>
+        <p>Pick every winner, share one URL, and grade the card after the fights.</p>
+      </header>
+
+      <section class="toolbar" aria-label="Event controls">
+        <label for="event-select">Event</label>
+        <select id="event-select" disabled>
+          <option>Loading UFC events...</option>
+        </select>
+        <div class="actions">
+          <button id="share-button" class="primary" disabled>Copy share link</button>
+          <button id="grade-button" disabled>Grade picks</button>
+        </div>
+        <p id="message" class="message" role="status"></p>
+      </section>
+
+      <section id="event-header" class="event-header" hidden></section>
+      <section id="score" class="score" hidden aria-live="polite"></section>
+      <section id="bouts" class="bouts" aria-live="polite"></section>
+    </main>
+  </body>
+</html>
