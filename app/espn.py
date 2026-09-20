@@ -34,6 +34,23 @@ class CacheEntry:
 _scoreboard_cache: dict[str, CacheEntry] = {}
 _cache_locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
 _redis = Redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None:
+        _http_client = httpx.AsyncClient(
+            timeout=UPSTREAM_TIMEOUT_SECONDS,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+            headers={
+                "Accept": "application/json",
+                "User-Agent": (
+                    "mma-api-service/0.1 (+https://github.com/cascadiacollections/mma-api-service)"
+                ),
+            },
+        )
+    return _http_client
 
 
 def _cache_key(params: dict[str, str]) -> str:
@@ -95,8 +112,12 @@ async def _store_cached(key: str, payload: dict[str, Any], ttl: int) -> None:
 
 
 async def close_cache() -> None:
+    global _http_client
     if _redis is not None:
         await _redis.aclose()
+    if _http_client is not None:
+        await _http_client.aclose()
+        _http_client = None
 
 
 async def fetch_scoreboard(params: dict[str, str]) -> dict[str, Any]:
@@ -112,9 +133,8 @@ async def fetch_scoreboard(params: dict[str, str]) -> dict[str, Any]:
             return cached
 
         try:
-            async with httpx.AsyncClient(timeout=UPSTREAM_TIMEOUT_SECONDS) as client:
-                response = await client.get(ESPN_SCOREBOARD_URL, params=params)
-                response.raise_for_status()
+            response = await _get_http_client().get(ESPN_SCOREBOARD_URL, params=params)
+            response.raise_for_status()
         except httpx.TimeoutException as exc:
             raise HTTPException(status_code=504, detail="UFC event provider timed out") from exc
         except httpx.HTTPError as exc:
