@@ -30,7 +30,14 @@ def make_completed_event() -> Event:
                 status="Final",
                 completed=True,
                 fighters=[
-                    Fighter(id="1", name="Winner"),
+                    Fighter(
+                        id="1",
+                        name="Winner",
+                        record="10-0-0",
+                        image_url="https://a.espncdn.com/i/headshots/mma/players/full/1.png",
+                        espn_profile_url="https://www.espn.com/mma/fighter/_/id/1",
+                        tapology_search_url="https://www.tapology.com/search?term=Winner",
+                    ),
                     Fighter(id="2", name="Opponent"),
                 ],
                 winner_id="1",
@@ -46,6 +53,9 @@ async def test_health_and_security_headers(client: AsyncClient) -> None:
     assert response.json() == {"status": "ok", "revision": "development"}
     assert response.headers["content-security-policy"].startswith("default-src 'self'")
     assert "googlesyndication" not in response.headers["content-security-policy"]
+    assert (
+        "img-src 'self' data: https://a.espncdn.com" in response.headers["content-security-policy"]
+    )
     assert response.headers["x-content-type-options"] == "nosniff"
     assert response.headers["x-frame-options"] == "DENY"
     assert response.headers["x-robots-tag"] == "noindex, nofollow"
@@ -154,6 +164,9 @@ async def test_event_page_is_crawlable(
     assert "Winner (10" not in response.text
     assert "Winner" in response.text
     assert "Opponent" in response.text
+    assert "a.espncdn.com/i/headshots/mma/players/full/1.png" in response.text
+    assert "www.tapology.com/search?term=Winner" in response.text
+    assert "www.espn.com/mma/fighter/_/id/1" in response.text
 
 
 async def test_advertising_is_disabled_by_default(client: AsyncClient) -> None:

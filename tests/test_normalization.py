@@ -21,7 +21,12 @@ def test_normalizes_espn_event() -> None:
                             "winner": True,
                             "athlete": {
                                 "displayName": "Winner",
-                                "flag": {"alt": "United States"},
+                                "flag": {
+                                    "href": (
+                                        "https://a.espncdn.com/i/teamlogos/countries/500/usa.png"
+                                    ),
+                                    "alt": "United States",
+                                },
                             },
                             "records": [{"type": "total", "summary": "10-0-0"}],
                         },
@@ -41,6 +46,16 @@ def test_normalizes_espn_event() -> None:
     assert event.bouts[0].winner_id == "1"
     assert event.bouts[0].fighters[0].record == "10-0-0"
     assert event.bouts[0].fighters[0].country == "United States"
+    assert (
+        event.bouts[0].fighters[0].flag_url
+        == "https://a.espncdn.com/i/teamlogos/countries/500/usa.png"
+    )
+    assert (
+        event.bouts[0].fighters[0].image_url
+        == "https://a.espncdn.com/i/headshots/mma/players/full/1.png"
+    )
+    assert event.bouts[0].fighters[0].espn_profile_url.endswith("/id/1")
+    assert event.bouts[0].fighters[0].tapology_search_url.endswith("term=Winner")
 
 
 def test_rejects_bout_without_two_fighters() -> None:

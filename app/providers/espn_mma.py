@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from datetime import date, timedelta
 from time import monotonic
 from typing import Any
+from urllib.parse import quote_plus
 from weakref import WeakValueDictionary
 
 import httpx
@@ -196,6 +197,8 @@ def normalize_event_summary(raw_event: dict[str, Any]) -> EventSummary:
 
 def _normalize_fighter(raw_competitor: dict[str, Any]) -> Fighter:
     athlete = raw_competitor.get("athlete", {})
+    fighter_id = str(raw_competitor["id"])
+    fighter_name = str(athlete.get("displayName") or athlete.get("fullName") or "Unknown fighter")
     records = raw_competitor.get("records", [])
     overall_record = next(
         (record.get("summary") for record in records if record.get("type") == "total"),
@@ -203,10 +206,14 @@ def _normalize_fighter(raw_competitor: dict[str, Any]) -> Fighter:
     )
     flag = athlete.get("flag") or {}
     return Fighter(
-        id=str(raw_competitor["id"]),
-        name=str(athlete.get("displayName") or athlete.get("fullName") or "Unknown fighter"),
+        id=fighter_id,
+        name=fighter_name,
         record=overall_record,
         country=flag.get("alt"),
+        flag_url=flag.get("href"),
+        image_url=f"https://a.espncdn.com/i/headshots/mma/players/full/{fighter_id}.png",
+        espn_profile_url=f"https://www.espn.com/mma/fighter/_/id/{fighter_id}",
+        tapology_search_url=f"https://www.tapology.com/search?term={quote_plus(fighter_name)}",
     )
 
 

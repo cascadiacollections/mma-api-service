@@ -29,4 +29,8 @@
       // Keep the selected theme for this page even if persistence is blocked.
     }
   });
+
+  document.querySelectorAll(".event-fighter img").forEach((image) => {
+    image.addEventListener("error", () => image.remove());
+  });
 })();

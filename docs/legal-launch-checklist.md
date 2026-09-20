@@ -21,8 +21,11 @@ material traffic growth.
 - [ ] Keep the product name and trade dress distinct from UFC and ESPN.
 - [ ] Use UFC only to identify the events covered; never use “official,” partner,
       sponsor, or endorsement language without authorization.
-- [ ] Do not add UFC/ESPN logos, broadcast footage, photography, promotional
-      copy, fighter likenesses, or proprietary statistics without licenses.
+- [ ] Obtain permission or an appropriate license before relying on third-party
+      fighter photography in a commercial deployment. Direct CDN loading,
+      attribution, and a source link do not themselves grant reuse rights.
+- [ ] Do not add UFC/ESPN logos, broadcast footage, promotional copy, fighter
+      likenesses, or proprietary statistics without licenses.
 - [ ] Keep the non-affiliation disclosure visible in the product.
 
 ## Contest structure
