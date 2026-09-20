@@ -14,11 +14,36 @@
     return Uint8Array.from(binary, (character) => character.charCodeAt(0));
   }
 
+  function cardLayout(event) {
+    return event.bouts
+      .map((bout) => ({
+        ...bout,
+        fighters: [...bout.fighters].sort((left, right) => left.id.localeCompare(right.id)),
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id));
+  }
+
+  function cardFingerprint(event) {
+    const input = cardLayout(event)
+      .map((bout) => `${bout.id}:${bout.fighters.map((fighter) => fighter.id).join(",")}`)
+      .join("|");
+    const bytes = new TextEncoder().encode(input);
+    let crc = 0xffff;
+
+    bytes.forEach((byte) => {
+      crc ^= byte << 8;
+      for (let bit = 0; bit < 8; bit += 1) {
+        crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xffff : (crc << 1) & 0xffff;
+      }
+    });
+    return crc;
+  }
+
   function encode(event, picks) {
     let packed = 0n;
     let place = 1n;
 
-    event.bouts.forEach((bout) => {
+    cardLayout(event).forEach((bout) => {
       const fighterIndex = bout.fighters.findIndex((fighter) => fighter.id === picks[bout.id]);
       const choice = fighterIndex < 0 ? 0 : fighterIndex + 1;
       packed += BigInt(choice) * place;
@@ -30,15 +55,18 @@
       bytes.unshift(Number(packed & 255n));
       packed >>= 8n;
     } while (packed > 0n);
-    return toBase64Url(Uint8Array.from(bytes));
+
+    const fingerprint = cardFingerprint(event);
+    bytes.unshift(fingerprint >> 8, fingerprint & 255);
+    return `1.${toBase64Url(Uint8Array.from(bytes))}`;
   }
 
-  function decodeCompact(event, value) {
+  function decodeCompact(event, value, bouts = event.bouts) {
     const bytes = fromBase64Url(value);
     let packed = bytes.reduce((result, byte) => (result << 8n) | BigInt(byte), 0n);
     const picks = {};
 
-    event.bouts.forEach((bout) => {
+    bouts.forEach((bout) => {
       const choice = Number(packed % 3n);
       packed /= 3n;
       const fighter = bout.fighters[choice - 1];
@@ -51,6 +79,19 @@
       throw new Error("Pick payload contains extra data");
     }
     return picks;
+  }
+
+  function decodeVersionOne(event, value) {
+    const bytes = fromBase64Url(value);
+    if (bytes.length < 3) {
+      throw new Error("Pick payload is incomplete");
+    }
+
+    const fingerprint = (bytes[0] << 8) | bytes[1];
+    if (fingerprint !== cardFingerprint(event)) {
+      throw new Error("The fight card changed after this link was created");
+    }
+    return decodeCompact(event, toBase64Url(bytes.slice(2)), cardLayout(event));
   }
 
   function decodeLegacy(value) {
@@ -67,6 +108,9 @@
     if (!value) return {};
     if (value.length > 512) {
       throw new Error("Pick payload is too long");
+    }
+    if (value.startsWith("1.")) {
+      return decodeVersionOne(event, value.slice(2));
     }
 
     try {

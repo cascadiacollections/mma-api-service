@@ -44,9 +44,10 @@ Example grading request:
 ```
 
 Picks are packed as base-3 fighter choices and encoded with base64url in the
-`p` query parameter. A typical card requires only four or five characters.
-Previously shared base64url JSON links remain supported. No account, database,
-or server-side pick storage is required for the MVP.
+`p` query parameter. A typical card requires roughly nine characters, including
+a card fingerprint that prevents a changed lineup from silently remapping
+picks. Previously shared compact and base64url JSON links remain supported. No
+account, database, or server-side pick storage is required for the MVP.
 
 Upstream requests are coalesced and cached according to event volatility:
 

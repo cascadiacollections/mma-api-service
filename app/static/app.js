@@ -131,8 +131,13 @@ async function loadEvent(eventId, sharedPickToken = null) {
   try {
     currentEvent = await api(`/api/events/${encodeURIComponent(eventId)}`);
     let sharedPicks = {};
+    let sharedPickError = null;
     if (sharedPickToken) {
-      sharedPicks = PickCodec.decode(currentEvent, sharedPickToken);
+      try {
+        sharedPicks = PickCodec.decode(currentEvent, sharedPickToken);
+      } catch (error) {
+        sharedPickError = error.message;
+      }
     }
     const validPicks = Object.fromEntries(
       Object.entries(sharedPicks).filter(([boutId, fighterId]) => {
@@ -150,8 +155,17 @@ async function loadEvent(eventId, sharedPickToken = null) {
     eventSelect.value = eventId;
     renderEvent();
     updateControls();
-    showPickCount();
-    if (sharedPickToken && currentEvent.completed && selectedPickCount() > 0) {
+    if (sharedPickError) {
+      setMessage(sharedPickError, true);
+    } else {
+      showPickCount();
+    }
+    if (
+      sharedPickToken &&
+      !sharedPickError &&
+      currentEvent.completed &&
+      selectedPickCount() > 0
+    ) {
       await gradePicks();
     }
   } catch (error) {
