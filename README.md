@@ -6,6 +6,13 @@ cards into win/loss/pending/void results.
 
 ## Run locally
 
+The repository includes a `mise.toml` for consistent Python, Node.js, and `uv`
+versions:
+
+```bash
+mise install
+```
+
 ```bash
 uv sync
 uv run uvicorn app.main:app --reload
