@@ -33,13 +33,22 @@ RUN apt-get update \
 
 # Non-root user. uid/gid 1000 matches the typical rootful Linux/macOS host user;
 # devcontainer.json sets updateRemoteUserUID so bind-mounted files stay writable.
+#
+# Every intermediate directory is listed explicitly: `install -d` applies -o/-g
+# only to the final path component, so creating just .cache/uv would leave
+# .cache itself root-owned. Zed's remote server then cannot create
+# ~/.cache/zed and dies with "failed to spawn server", which surfaces in the
+# editor as "Remote server exited with status 1" after the container is built.
 ARG USERNAME=vscode
 ARG USER_UID=1000
 ARG USER_GID=1000
 RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
     && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /bin/bash "${USERNAME}" \
     && install -d -o "${USERNAME}" -g "${USERNAME}" \
+        "/home/${USERNAME}/.cache" \
         "/home/${USERNAME}/.cache/uv" \
+        "/home/${USERNAME}/.local" \
+        "/home/${USERNAME}/.local/share" \
         "/home/${USERNAME}/.venv"
 
 ENV UV_LINK_MODE=copy \
