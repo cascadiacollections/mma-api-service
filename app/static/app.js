@@ -197,8 +197,10 @@ gradeButton.addEventListener("click", gradePicks);
 shareButton.addEventListener("click", async () => {
   const url = new URL(window.location.href);
   url.search = "";
-  url.searchParams.set("event", currentEvent.id);
-  url.searchParams.set("p", PickCodec.encode(currentEvent, picks));
+  const fragment = new URLSearchParams();
+  fragment.set("event", currentEvent.id);
+  fragment.set("p", PickCodec.encode(currentEvent, picks));
+  url.hash = fragment.toString();
   try {
     await navigator.clipboard.writeText(url.toString());
     window.history.replaceState({}, "", url);
@@ -225,7 +227,9 @@ async function initialize() {
     });
     eventSelect.disabled = false;
 
-    const params = new URLSearchParams(window.location.search);
+    const params = window.location.hash
+      ? new URLSearchParams(window.location.hash.slice(1))
+      : new URLSearchParams(window.location.search);
     const requestedEvent = params.get("event");
     const selectedEvent =
       requestedEvent || events.find((event) => !event.completed)?.id || events.at(-1).id;

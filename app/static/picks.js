@@ -18,9 +18,11 @@
     return event.bouts
       .map((bout) => ({
         ...bout,
-        fighters: [...bout.fighters].sort((left, right) => left.id.localeCompare(right.id)),
+        fighters: [...bout.fighters].sort((left, right) =>
+          left.id < right.id ? -1 : left.id > right.id ? 1 : 0,
+        ),
       }))
-      .sort((left, right) => left.id.localeCompare(right.id));
+      .sort((left, right) => (left.id < right.id ? -1 : left.id > right.id ? 1 : 0));
   }
 
   function cardFingerprint(event) {
