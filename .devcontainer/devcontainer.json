@@ -19,7 +19,13 @@
   "remoteEnv": {
     "PATH": "${containerWorkspaceFolder}/.venv/bin:${containerEnv:PATH}"
   },
-  "postCreateCommand": "uv sync --frozen",
+  // Array (exec) form, not a string: Zed's built-in dev container support
+  // wraps a string command in `/bin/sh -c` and then space-joins program and
+  // args into a second `sh -c`, so `uv sync --frozen` reaches the shell as the
+  // script `uv` with `sync`/`--frozen` as positional parameters and uv aborts
+  // with "requires a subcommand". The array form survives that round-trip and
+  // is also what the devcontainer CLI expects.
+  "postCreateCommand": ["uv", "sync", "--frozen"],
   "forwardPorts": [8000],
   "portsAttributes": {
     "8000": {
