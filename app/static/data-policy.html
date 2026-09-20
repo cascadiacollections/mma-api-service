@@ -22,16 +22,24 @@
         The service currently normalizes a limited set of factual event information
         from ESPN's publicly reachable UFC scoreboard feed: event names and dates,
         bout identifiers, fighter names and records, weight classes, statuses, and
-        winner indicators. It does not copy articles, commentary, video, photography,
-        logos, betting lines, or broadcast content.
+        winner indicators. Fighter identifiers are also used to link to ESPN profiles
+        and ESPN-hosted headshots. Images are loaded from ESPN's CDN rather than
+        copied or stored by this service. The service does not copy articles,
+        commentary, video, logos, betting lines, or broadcast content.
       </p>
 
       <h2>Responsible access</h2>
       <p>
         Requests are made by the server with an identifying user agent. Concurrent
         requests are coalesced, scheduled and live cards use bounded refresh periods,
-        and completed cards are cached for up to 24 hours. The browser never contacts
-        the event provider directly.
+        and completed cards are cached for up to 24 hours. Browsers contact ESPN's
+        image CDN only for lazy-loaded fighter headshots and send no referrer header.
+        Missing images are removed from the interface.
+      </p>
+      <p>
+        Tapology links are name-based searches intended to help users find the
+        corresponding fighter record. The service does not scrape Tapology, copy its
+        profiles or images, or claim that a search result is an identity match.
       </p>
 
       <h2>No affiliation or data license claim</h2>

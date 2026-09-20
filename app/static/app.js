@@ -99,18 +99,36 @@ function renderEvent() {
         versus.textContent = "VS";
         fighters.append(versus);
       }
+      const fighterCard = document.createElement("div");
+      fighterCard.className = "fighter";
       const button = document.createElement("button");
-      button.className = "fighter";
+      button.className = "fighter-pick";
       button.type = "button";
       button.dataset.fighterId = fighter.id;
       button.setAttribute("aria-pressed", picks[bout.id] === fighter.id ? "true" : "false");
+      if (fighter.image_url) {
+        const image = document.createElement("img");
+        image.className = "fighter-image";
+        image.src = fighter.image_url;
+        image.alt = "";
+        image.width = 64;
+        image.height = 64;
+        image.loading = "lazy";
+        image.decoding = "async";
+        image.referrerPolicy = "no-referrer";
+        image.addEventListener("error", () => image.remove());
+        button.append(image);
+      }
+      const identity = document.createElement("span");
+      identity.className = "fighter-identity";
       const name = document.createElement("strong");
       name.className = "fighter-name";
       name.textContent = fighter.name;
       const record = document.createElement("span");
       record.className = "fighter-record";
       record.textContent = [fighter.record, fighter.country].filter(Boolean).join(" · ");
-      button.append(name, record);
+      identity.append(name, record);
+      button.append(identity);
 
       if (picks[bout.id] === fighter.id) button.classList.add("selected");
       const result = gradeResults[bout.id];
@@ -127,7 +145,27 @@ function renderEvent() {
         updateControls();
         showPickCount();
       });
-      fighters.append(button);
+
+      const profileLinks = document.createElement("span");
+      profileLinks.className = "fighter-links";
+      if (fighter.tapology_search_url) {
+        const tapology = document.createElement("a");
+        tapology.href = fighter.tapology_search_url;
+        tapology.target = "_blank";
+        tapology.rel = "external noopener noreferrer";
+        tapology.textContent = "Tapology";
+        profileLinks.append(tapology);
+      }
+      if (fighter.espn_profile_url) {
+        const espn = document.createElement("a");
+        espn.href = fighter.espn_profile_url;
+        espn.target = "_blank";
+        espn.rel = "external noopener noreferrer";
+        espn.textContent = "ESPN profile";
+        profileLinks.append(espn);
+      }
+      fighterCard.append(button, profileLinks);
+      fighters.append(fighterCard);
     });
 
     card.append(info, fighters);

@@ -102,7 +102,7 @@ async def add_security_headers(request: Request, call_next):
     request.state.csp_nonce = secrets.token_urlsafe(16)
     response = await call_next(request)
     script_sources = f"'self' 'nonce-{request.state.csp_nonce}'"
-    image_sources = "'self' data:"
+    image_sources = "'self' data: https://a.espncdn.com"
     frame_sources = "'none'"
     connect_sources = "'self'"
     style_sources = "'self'"

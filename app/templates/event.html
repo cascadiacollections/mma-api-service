@@ -48,16 +48,55 @@
       <section class="event-list" aria-label="{{ event.name }} bouts">
         {% for bout in event.bouts %}
         <article class="event-list-bout">
-          <div>
+          <div class="bout-label">
             <strong>Bout {{ bout.order }}</strong>
             <span>{{ bout.weight_class or "MMA" }}</span>
           </div>
-          <p>
+          <div class="event-matchup">
             {% for fighter in bout.fighters %}
-              <span>{{ fighter.name }}{% if fighter.record %} ({{ fighter.record }}){% endif %}</span>
+              <article class="event-fighter">
+                {% if fighter.image_url and fighter.espn_profile_url %}
+                <a
+                  href="{{ fighter.espn_profile_url }}"
+                  target="_blank"
+                  rel="external noopener noreferrer"
+                  aria-label="{{ fighter.name }} profile on ESPN"
+                >
+                  <img
+                    src="{{ fighter.image_url }}"
+                    alt=""
+                    width="56"
+                    height="56"
+                    loading="lazy"
+                    decoding="async"
+                    referrerpolicy="no-referrer"
+                  >
+                </a>
+                {% endif %}
+                <span>
+                  <strong>{{ fighter.name }}</strong>
+                  {% if fighter.record %}<small>{{ fighter.record }}</small>{% endif %}
+                  <small class="fighter-source-links">
+                    {% if fighter.tapology_search_url %}
+                    <a
+                      href="{{ fighter.tapology_search_url }}"
+                      target="_blank"
+                      rel="external noopener noreferrer"
+                    >Tapology</a>
+                    {% endif %}
+                    {% if fighter.espn_profile_url %}
+                    <a
+                      href="{{ fighter.espn_profile_url }}"
+                      target="_blank"
+                      rel="external noopener noreferrer"
+                    >ESPN</a>
+                    {% endif %}
+                  </small>
+                </span>
+              </article>
               {% if not loop.last %}<b>vs.</b>{% endif %}
             {% endfor %}
-          </p>
+          </div>
           <span>{{ bout.status }}</span>
         </article>
         {% endfor %}
