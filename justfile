@@ -30,6 +30,13 @@ indexnow:
 audit:
     uv export --frozen --no-dev --format requirements-txt --no-hashes | uvx --from pip-audit pip-audit -r /dev/stdin
 
+deploy-render:
+    IMAGE=example-docker.pkg.dev/project/repo/mma-api-service:local \
+    CLOUD_RUN_SERVICE=mma-api-service \
+    CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT=runtime@project.iam.gserviceaccount.com \
+    BUILD_SHA=local \
+    deploy/render-service.sh
+
 container-build:
     docker build --tag mma-api-service:local .
 

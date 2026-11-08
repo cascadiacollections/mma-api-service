@@ -29,6 +29,17 @@ jobs:
       - run: node --test tests/picks.test.js
       - run: node --check app/static/app.js
       - run: node --check app/static/theme.js
+      - name: Render Cloud Run service definition
+        env:
+          IMAGE: example-docker.pkg.dev/project/repo/mma-api-service:ci
+          CLOUD_RUN_SERVICE: mma-api-service
+          CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: runtime@project.iam.gserviceaccount.com
+          BUILD_SHA: ${{ github.sha }}
+          REDIS_URL_SECRET: example-secret
+        run: |
+          deploy/render-service.sh > "${RUNNER_TEMP}/service.yaml"
+          yq -e '.spec.template.spec.containers[0].image == strenv(IMAGE)' "${RUNNER_TEMP}/service.yaml"
+          yq -e '.spec.template.spec.containers[0].startupProbe.httpGet.path == "/api/ready"' "${RUNNER_TEMP}/service.yaml"
 
   container:
     runs-on: ubuntu-latest

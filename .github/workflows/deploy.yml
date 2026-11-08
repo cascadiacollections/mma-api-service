@@ -9,18 +9,20 @@ concurrency:
   group: production
   cancel-in-progress: true
 
-permissions:
-  contents: read
-  id-token: write
-  packages: write
+permissions: {}
 
 jobs:
   publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
@@ -46,18 +48,28 @@ jobs:
 
   deploy:
     needs: publish
-    if: ${{ vars.GCP_PROJECT_ID != '' }}
+    # Nothing deploys until the owner configures Google Cloud. After that, only a
+    # manual run on main deploys, unless CLOUD_RUN_AUTO_DEPLOY is set to "true".
+    if: >-
+      vars.GCP_PROJECT_ID != '' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'workflow_dispatch' || vars.CLOUD_RUN_AUTO_DEPLOY == 'true')
     runs-on: ubuntu-latest
     environment: production
+    permissions:
+      contents: read
+      id-token: write
+      packages: read
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      GCP_REGION: ${{ vars.GCP_REGION }}
+      GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
+      CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+      CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
+      GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+      GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
     steps:
       - name: Validate deployment configuration
-        env:
-          GCP_REGION: ${{ vars.GCP_REGION }}
-          GAR_REPOSITORY: ${{ vars.GAR_REPOSITORY }}
-          CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-          CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT: ${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}
-          GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
         run: |
           for name in \
             GCP_REGION \
@@ -70,6 +82,10 @@ jobs:
             test -n "${!name}" || { echo "::error::Missing repository variable: ${name}"; exit 1; }
           done
 
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
       - uses: google-github-actions/auth@7c6bc770dae815cd3e89ee6cdf493a5fab2cc093 # v3
         with:
           workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
@@ -81,73 +97,59 @@ jobs:
         env:
           GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SOURCE_IMAGE: ghcr.io/${{ github.repository }}@${{ needs.publish.outputs.digest }}
-          TARGET_IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
         run: |
+          target_image="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
           echo "${GHCR_TOKEN}" | docker login ghcr.io --username "${GITHUB_ACTOR}" --password-stdin
-          gcloud auth configure-docker "${{ vars.GCP_REGION }}-docker.pkg.dev" --quiet
+          gcloud auth configure-docker "${GCP_REGION}-docker.pkg.dev" --quiet
           docker pull "${SOURCE_IMAGE}"
-          docker tag "${SOURCE_IMAGE}" "${TARGET_IMAGE}"
-          docker push "${TARGET_IMAGE}"
+          docker tag "${SOURCE_IMAGE}" "${target_image}"
+          docker push "${target_image}"
 
-      - name: Deploy to Cloud Run
+      - name: Render service definition
         env:
-          IMAGE: ${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ vars.GAR_REPOSITORY }}/${{ vars.CLOUD_RUN_SERVICE }}:${{ github.sha }}
           PUBLIC_BASE_URL: ${{ vars.PUBLIC_BASE_URL }}
           GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
           BING_SITE_VERIFICATION: ${{ vars.BING_SITE_VERIFICATION }}
           INDEXNOW_KEY: ${{ vars.INDEXNOW_KEY }}
           ADSENSE_PUBLISHER_ID: ${{ vars.ADSENSE_PUBLISHER_ID }}
           ADSENSE_SLOT_ID: ${{ vars.ADSENSE_SLOT_ID }}
+          REDIS_URL_SECRET: ${{ vars.CLOUD_RUN_REDIS_URL_SECRET }}
         run: |
-          env_vars="LOG_LEVEL=INFO,BUILD_SHA=${{ github.sha }}"
-          if [[ -n "${PUBLIC_BASE_URL}" ]]; then
-            env_vars+=",PUBLIC_BASE_URL=${PUBLIC_BASE_URL}"
-          fi
-          if [[ -n "${GOOGLE_SITE_VERIFICATION}" ]]; then
-            env_vars+=",GOOGLE_SITE_VERIFICATION=${GOOGLE_SITE_VERIFICATION}"
-          fi
-          if [[ -n "${BING_SITE_VERIFICATION}" ]]; then
-            env_vars+=",BING_SITE_VERIFICATION=${BING_SITE_VERIFICATION}"
-          fi
-          if [[ -n "${INDEXNOW_KEY}" ]]; then
-            env_vars+=",INDEXNOW_KEY=${INDEXNOW_KEY}"
-          fi
-          if [[ -n "${ADSENSE_PUBLISHER_ID}" ]]; then
-            env_vars+=",ADSENSE_PUBLISHER_ID=${ADSENSE_PUBLISHER_ID}"
-          fi
-          if [[ -n "${ADSENSE_SLOT_ID}" ]]; then
-            env_vars+=",ADSENSE_SLOT_ID=${ADSENSE_SLOT_ID}"
-          fi
-          gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
-            --image "${IMAGE}" \
-            --project "${{ vars.GCP_PROJECT_ID }}" \
-            --region "${{ vars.GCP_REGION }}" \
-            --service-account "${{ vars.CLOUD_RUN_RUNTIME_SERVICE_ACCOUNT }}" \
-            --allow-unauthenticated \
-            --execution-environment gen2 \
-            --port 8080 \
-            --cpu 1 \
-            --memory 512Mi \
-            --concurrency 80 \
-            --timeout 30s \
-            --min-instances 0 \
-            --max-instances 3 \
-            --set-env-vars "${env_vars}" \
+          export BUILD_SHA="${GITHUB_SHA}"
+          export IMAGE="${GCP_REGION}-docker.pkg.dev/${GCP_PROJECT_ID}/${GAR_REPOSITORY}/${CLOUD_RUN_SERVICE}:${GITHUB_SHA}"
+          deploy/render-service.sh > "${RUNNER_TEMP}/service.yaml"
+
+      # `services replace` never changes IAM policy, so a new service stays
+      # private until the owner explicitly grants public access.
+      - name: Deploy to Cloud Run
+        run: |
+          gcloud run services replace "${RUNNER_TEMP}/service.yaml" \
+            --project "${GCP_PROJECT_ID}" \
+            --region "${GCP_REGION}" \
             --quiet
 
       - name: Verify deployment
         run: |
           service_url="$(
-            gcloud run services describe "${{ vars.CLOUD_RUN_SERVICE }}" \
-              --project "${{ vars.GCP_PROJECT_ID }}" \
-              --region "${{ vars.GCP_REGION }}" \
+            gcloud run services describe "${CLOUD_RUN_SERVICE}" \
+              --project "${GCP_PROJECT_ID}" \
+              --region "${GCP_REGION}" \
               --format 'value(status.url)'
           )"
-          curl \
-            --fail \
-            --retry 8 \
-            --retry-all-errors \
-            --retry-delay 2 \
-            "${service_url}/api/ready"
-          echo "### Deployment" >> "${GITHUB_STEP_SUMMARY}"
-          echo "${service_url}" >> "${GITHUB_STEP_SUMMARY}"
+          # The startup probe already gated the revision on /api/ready. A
+          # private service answers 403 to unauthenticated requests.
+          status="$(
+            curl --silent --output /dev/null --write-out '%{http_code}' \
+              --retry 8 --retry-all-errors --retry-delay 2 \
+              "${service_url}/api/ready" || true
+          )"
+          case "${status}" in
+            200) access="public" ;;
+            403) access="private (IAM invoker check)" ;;
+            *) echo "::error::Unexpected status ${status} from ${service_url}/api/ready"; exit 1 ;;
+          esac
+          {
+            echo "### Deployment"
+            echo "- URL: ${service_url}"
+            echo "- Access: ${access}"
+          } >> "${GITHUB_STEP_SUMMARY}"

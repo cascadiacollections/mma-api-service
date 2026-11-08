@@ -116,7 +116,8 @@ The image exposes `/api/health` as its container health check and reads:
 Pull requests run formatting, linting, tests, JavaScript syntax checks, an image
 build, and a container smoke test. Merges to `main` always publish commit and
 `latest` images to GHCR. Cloud Run deployment runs only after the Google Cloud
-repository variables below are configured.
+repository variables below are configured, and then only from a manual
+`Publish and deploy` run on `main` until `CLOUD_RUN_AUTO_DEPLOY` is `true`.
 
 Configure the GitHub `production` environment with these repository variables:
 
@@ -129,10 +130,13 @@ Configure the GitHub `production` environment with these repository variables:
 - `GCP_DEPLOY_SERVICE_ACCOUNT`
 
 The deployment identity should use GitHub OIDC workload identity federation;
-no Google service-account key is required. The workflow deploys with zero
-minimum instances, a three-instance ceiling, one CPU, 512 MiB memory, and
-request-based CPU allocation. Configure `REDIS_URL` separately as a Cloud Run
-secret only if shared caching is needed. See
+no Google service-account key is required. The service definition in
+[`deploy/service.yaml`](deploy/service.yaml) sets zero minimum instances, a
+three-instance ceiling, one CPU, 512 MiB memory, request-based CPU allocation,
+and startup and liveness probes. New services are private; granting public
+access is a separate owner step that should follow the data-rights review in
+issue #3. Set `CLOUD_RUN_REDIS_URL_SECRET` to a Secret Manager secret name only
+if shared caching is needed. See
 [`docs/cloud-run.md`](docs/cloud-run.md) for the complete bootstrap procedure.
 
 The service provides `robots.txt`, a dynamic `sitemap.xml`, crawlable event
