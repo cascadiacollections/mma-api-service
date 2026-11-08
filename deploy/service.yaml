@@ -1,0 +1,64 @@
+# Cloud Run service definition, applied with `gcloud run services replace`.
+#
+# deploy/render-service.sh fills in the service name, image, runtime service
+# account, build SHA, and optional environment for each deployment. Everything
+# else here is the reviewed production configuration.
+#
+# Access is deliberately not configured in this file. A new service is private
+# (IAM invoker check on) and the deploy identity cannot change IAM policy, so
+# making the service public is a separate, explicit owner step. See
+# docs/cloud-run.md and issue #3 before granting allUsers access.
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: mma-api-service
+  labels:
+    app: mma-api-service
+  annotations:
+    run.googleapis.com/ingress: all
+spec:
+  template:
+    metadata:
+      labels:
+        app: mma-api-service
+      annotations:
+        autoscaling.knative.dev/minScale: "0"
+        autoscaling.knative.dev/maxScale: "3"
+        run.googleapis.com/execution-environment: gen2
+        # Request-based billing: CPU is only allocated while serving requests.
+        run.googleapis.com/cpu-throttling: "true"
+        run.googleapis.com/startup-cpu-boost: "true"
+    spec:
+      serviceAccountName: RUNTIME_SERVICE_ACCOUNT
+      containerConcurrency: 80
+      timeoutSeconds: 30
+      containers:
+        - name: app
+          image: IMAGE
+          ports:
+            - name: http1
+              containerPort: 8080
+          resources:
+            limits:
+              cpu: "1"
+              memory: 512Mi
+          env:
+            - name: LOG_LEVEL
+              value: INFO
+            - name: BUILD_SHA
+              value: BUILD_SHA
+          startupProbe:
+            httpGet:
+              path: /api/ready
+              port: 8080
+            initialDelaySeconds: 0
+            periodSeconds: 2
+            timeoutSeconds: 2
+            failureThreshold: 15
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: 8080
+            periodSeconds: 30
+            timeoutSeconds: 3
+            failureThreshold: 3
