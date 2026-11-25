@@ -81,12 +81,20 @@ Upstream requests are coalesced and cached according to event volatility:
 - Live cards: 15 seconds
 - Completed cards: 24 hours, allowing eventual result corrections
 
+If ESPN times out, cannot be reached, or returns a server error, a scoreboard
+that expired within the last 60 seconds is still served. That window is not
+extended when the stale payload is used. A client error or a malformed payload
+still fails the request.
+
 GET responses also include matching browser/CDN cache directives. Sharing picks
 does not call the API, and grading reuses the cached card whenever possible.
 
 Set `REDIS_URL` to use a Redis-compatible shared cache across instances. If it
-is unset, each process uses a bounded in-memory cache. A Redis outage is logged
-and degrades to the process cache rather than interrupting picks.
+is unset, each process uses a bounded in-memory cache. Shared-cache commands
+use a short socket timeout and are not retried, so a hung or failing Redis is
+logged and the process cache is used instead. A shared-cache hit is copied into
+the process cache for the key's remaining TTL. The next request on that
+instance skips Redis, and a later Redis outage can still serve that scoreboard.
 
 ## Containers
 
