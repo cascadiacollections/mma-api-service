@@ -13,6 +13,8 @@ from weakref import WeakValueDictionary
 import httpx
 from pydantic import ValidationError
 from redis.asyncio import Redis
+from redis.asyncio.retry import Retry
+from redis.backoff import NoBackoff
 from redis.exceptions import RedisError
 
 from app.models import Bout, Event, EventSummary, Fighter
@@ -20,6 +22,12 @@ from app.models import Bout, Event, EventSummary, Fighter
 SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/mma/ufc/scoreboard"
 UPSTREAM_TIMEOUT_SECONDS = 10.0
 MAX_CACHE_ENTRIES = 256
+# A hung Redis (blackhole, failover) must not stall the request. redis-py retries
+# timeouts by default and would multiply this into several seconds of backoff.
+REDIS_SOCKET_TIMEOUT_SECONDS = 0.5
+# After the fresh TTL, keep the last good payload only this long, and only to
+# cover an ESPN timeout or server error. Do not refresh it when serving it.
+STALE_ON_ERROR_SECONDS = 60
 REDIS_URL = os.getenv("REDIS_URL")
 REDIS_PREFIX = "mma:scoreboard:"
 logger = logging.getLogger(__name__)
@@ -53,8 +61,20 @@ class CacheEntry:
 
 _scoreboard_cache: dict[str, CacheEntry] = {}
 _cache_locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
-_redis = Redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
 _http_client: httpx.AsyncClient | None = None
+
+
+def _build_redis_client(url: str) -> Redis:
+    return Redis.from_url(
+        url,
+        decode_responses=True,
+        socket_timeout=REDIS_SOCKET_TIMEOUT_SECONDS,
+        socket_connect_timeout=REDIS_SOCKET_TIMEOUT_SECONDS,
+        retry=Retry(NoBackoff(), 0),
+    )
+
+
+_redis = _build_redis_client(REDIS_URL) if REDIS_URL else None
 
 
 def _get_http_client() -> httpx.AsyncClient:
@@ -92,52 +112,150 @@ def _payload_ttl(payload: dict[str, Any], *, event_lookup: bool) -> int:
     return 900
 
 
-async def _get_cached(key: str) -> dict[str, Any] | None:
-    if _redis is not None:
-        try:
-            value = await _redis.get(f"{REDIS_PREFIX}{key}")
-            if value:
-                payload = json.loads(value)
-                if isinstance(payload, dict):
-                    return payload
-        except (RedisError, json.JSONDecodeError):
-            logger.exception("Shared cache unavailable; continuing with process cache")
-
+def _fresh_cached(key: str) -> dict[str, Any] | None:
     cached = _scoreboard_cache.get(key)
-    if cached and cached.expires_at > monotonic():
+    if cached is not None and cached.expires_at > monotonic():
         return cached.payload
     return None
 
 
-async def _store_cached(key: str, payload: dict[str, Any], ttl: int) -> None:
+def _stale_cached(key: str) -> dict[str, Any] | None:
+    cached = _scoreboard_cache.get(key)
+    if cached is None:
+        return None
     now = monotonic()
+    if cached.expires_at <= now < cached.expires_at + STALE_ON_ERROR_SECONDS:
+        return cached.payload
+    return None
+
+
+def _positive_ttl(ttl: Any) -> int:
+    # bool is an int subclass; Redis TTLs are real integers. -1 means no expiry
+    # and -2 means the key is gone, so neither is a usable remaining lifetime.
+    if isinstance(ttl, bool) or not isinstance(ttl, int) or ttl <= 0:
+        return 0
+    return ttl
+
+
+async def _read_shared_cache(redis: Redis, key: str) -> tuple[dict[str, Any] | None, int]:
+    redis_key = f"{REDIS_PREFIX}{key}"
+    async with redis.pipeline(transaction=False) as pipe:
+        pipe.get(redis_key)
+        pipe.ttl(redis_key)
+        loaded = await pipe.execute()
+    if len(loaded) != 2:
+        return None, 0
+    value, ttl = loaded
+    if not isinstance(value, str) or not value:
+        return None, 0
+    payload = json.loads(value)
+    if not isinstance(payload, dict):
+        return None, 0
+    return payload, _positive_ttl(ttl)
+
+
+async def _get_cached(key: str) -> dict[str, Any] | None:
+    # A fresh process entry avoids a Redis read on every request. The shared
+    # cache is consulted only when this process does not already have a copy.
+    fresh = _fresh_cached(key)
+    if fresh is not None:
+        return fresh
+
+    redis = _redis
+    if redis is None:
+        return None
+
+    try:
+        payload, ttl = await _read_shared_cache(redis, key)
+    except (RedisError, TimeoutError, json.JSONDecodeError):
+        # redis-py raises redis.exceptions.TimeoutError (a RedisError). A socket
+        # timeout can also surface as the builtin TimeoutError from asyncio.
+        logger.exception("Shared cache unavailable; continuing with process cache")
+        return None
+
+    if payload is None:
+        return None
+    # Copy the hit locally for no longer than Redis's remaining TTL so the next
+    # request, and a later Redis outage, can be served from this process.
+    if ttl > 0:
+        _store_process_cache(key, payload, ttl)
+    return payload
+
+
+def _store_process_cache(key: str, payload: dict[str, Any], ttl: int) -> None:
+    if ttl <= 0:
+        return
+
+    now = monotonic()
+    # Drop entries only after the stale window. A just-expired scoreboard is
+    # still the fallback when ESPN fails.
     expired_keys = [
         cached_key
         for cached_key, cached_entry in _scoreboard_cache.items()
-        if cached_entry.expires_at <= now
+        if cached_entry.expires_at + STALE_ON_ERROR_SECONDS <= now
     ]
     for expired_key in expired_keys:
         _scoreboard_cache.pop(expired_key, None)
 
-    while len(_scoreboard_cache) >= MAX_CACHE_ENTRIES:
+    while len(_scoreboard_cache) >= MAX_CACHE_ENTRIES and key not in _scoreboard_cache:
         oldest_key = next(iter(_scoreboard_cache))
         _scoreboard_cache.pop(oldest_key, None)
 
     _scoreboard_cache[key] = CacheEntry(payload=payload, expires_at=now + ttl)
-    if _redis is not None:
-        try:
-            await _redis.setex(f"{REDIS_PREFIX}{key}", ttl, json.dumps(payload))
-        except RedisError:
-            logger.exception("Shared cache write failed; process cache remains active")
+
+
+async def _store_cached(key: str, payload: dict[str, Any], ttl: int) -> None:
+    _store_process_cache(key, payload, ttl)
+    redis = _redis
+    if redis is None:
+        return
+    try:
+        await redis.setex(f"{REDIS_PREFIX}{key}", ttl, json.dumps(payload))
+    except (RedisError, TimeoutError):
+        logger.exception("Shared cache write failed; process cache remains active")
 
 
 async def close() -> None:
     global _http_client
     if _redis is not None:
-        await _redis.aclose()
+        try:
+            await _redis.aclose()
+        except (RedisError, TimeoutError):
+            logger.exception("Shared cache close failed")
     if _http_client is not None:
         await _http_client.aclose()
         _http_client = None
+
+
+def _serve_stale_on_error(exc: EspnMmaError) -> bool:
+    if isinstance(exc, EspnMmaTimeoutError):
+        return True
+    cause = exc.__cause__
+    if isinstance(cause, httpx.HTTPStatusError):
+        return cause.response.status_code >= 500
+    return isinstance(cause, httpx.HTTPError)
+
+
+async def _fetch_upstream(params: dict[str, str]) -> dict[str, Any]:
+    try:
+        response = await _get_http_client().get(SCOREBOARD_URL, params=params)
+        response.raise_for_status()
+    except httpx.TimeoutException as exc:
+        raise EspnMmaTimeoutError("UFC event provider timed out") from exc
+    except httpx.HTTPError as exc:
+        raise EspnMmaRequestError("UFC event provider request failed") from exc
+
+    try:
+        payload = response.json()
+    except ValueError as exc:
+        raise EspnMmaDataError("UFC event provider returned invalid JSON") from exc
+    if (
+        not isinstance(payload, dict)
+        or not isinstance(payload.get("events"), list)
+        or not all(isinstance(event, dict) for event in payload["events"])
+    ):
+        raise EspnMmaDataError("UFC event provider returned invalid data")
+    return payload
 
 
 async def fetch_scoreboard(params: dict[str, str]) -> dict[str, Any]:
@@ -153,23 +271,16 @@ async def fetch_scoreboard(params: dict[str, str]) -> dict[str, Any]:
             return cached
 
         try:
-            response = await _get_http_client().get(SCOREBOARD_URL, params=params)
-            response.raise_for_status()
-        except httpx.TimeoutException as exc:
-            raise EspnMmaTimeoutError("UFC event provider timed out") from exc
-        except httpx.HTTPError as exc:
-            raise EspnMmaRequestError("UFC event provider request failed") from exc
-
-        try:
-            payload = response.json()
-        except ValueError as exc:
-            raise EspnMmaDataError("UFC event provider returned invalid JSON") from exc
-        if (
-            not isinstance(payload, dict)
-            or not isinstance(payload.get("events"), list)
-            or not all(isinstance(event, dict) for event in payload["events"])
-        ):
-            raise EspnMmaDataError("UFC event provider returned invalid data")
+            payload = await _fetch_upstream(params)
+        except (EspnMmaTimeoutError, EspnMmaRequestError) as exc:
+            stale = _stale_cached(key) if _serve_stale_on_error(exc) else None
+            if stale is None:
+                raise
+            logger.warning(
+                "UFC event provider failed; serving scoreboard cached within the stale window",
+                exc_info=True,
+            )
+            return stale
 
         await _store_cached(
             key,
